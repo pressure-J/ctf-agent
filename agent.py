@@ -6,7 +6,7 @@ from openai import OpenAI
 load_dotenv()
 
 # ===================== 配置 =====================
-DEEPSEEK_API_KEY = ""  # 这里填你的 key
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 MODEL_NAME = "deepseek-chat"
 
 # 初始化 DeepSeek 客户端
