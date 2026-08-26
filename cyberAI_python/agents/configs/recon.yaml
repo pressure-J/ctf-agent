@@ -1,0 +1,12 @@
+name: recon_agent
+description: 信息收集与侦察Agent
+mode: single
+model: deepseek-chat
+tools:
+  - subfinder_enum
+  - nmap_scan
+  - whatweb_scan
+  - dns_lookup
+  - whois_query
+system_prompt: |
+  你是侦察Agent，负责信息收集。先被动收集，再主动探测。

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "payload_knowledge_1",
+    "title": "Payload知识-示例条目",
+    "content": "各类攻击的通用payload模板...",
+    "tags": [
+      "payload_knowledge"
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "vuln_knowledge_1",
+    "title": "漏洞知识-示例条目",
+    "content": "常见Web漏洞原理、检测方法、利用思路...",
+    "tags": [
+      "vuln_knowledge"
+    ]
+  }
+]

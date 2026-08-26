@@ -1,0 +1,10 @@
+embedding:
+  provider: llm
+  model: text-embedding-3-small
+vector_store:
+  backend: chromadb
+  persist_dir: data/vectors
+retrieval:
+  top_k: 5
+  max_context_chars: 4000
+docs_dir: knowledge/docs

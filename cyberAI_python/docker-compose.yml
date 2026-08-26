@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DATABASE_URL=sqlite:///data/cyberstrike.db
+    volumes:
+      - ./data:/data
+  # TODO: 前端 React 服务 + nginx 反代

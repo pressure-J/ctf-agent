@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ctf_knowledge_1",
+    "title": "CTF解题知识-示例条目",
+    "content": "CTF竞赛中常见的解题思路、flag格式等基础方法...",
+    "tags": [
+      "ctf_knowledge"
+    ]
+  }
+]

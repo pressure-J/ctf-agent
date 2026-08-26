@@ -1,0 +1,20 @@
+name: nmap_scan
+description: 基于Nmap的端口扫描与服务探测工具
+category: recon
+command: nmap
+args: ["-sV"]
+timeout: 120
+enabled: true
+parameters:
+  - name: target
+    type: string
+    description: 扫描目标(IP或域名)
+    required: true
+  - name: ports
+    type: string
+    description: 指定端口范围(如 80,443,1-1000)
+    required: false
+  - name: scan_type
+    type: string
+    description: 扫描类型(如 -sV, -sC)
+    required: false

@@ -1,0 +1,32 @@
+# CyberStrikeAI Python 主配置
+server:
+  host: 0.0.0.0
+  port: 8080
+
+llm:
+  default_model: deepseek-chat
+  base_url: ${DEEPSEEK_BASE_URL}
+  api_key: ${DEEPSEEK_API_KEY}
+
+database:
+  url: sqlite:///data/cyberstrike.db
+
+security:
+  jwt_secret: ${JWT_SECRET}
+  token_expire_minutes: 1440
+  bcrypt_rounds: 12
+
+agent:
+  default_mode: single
+  max_iterations: 30
+  temperature: 0.7
+
+tools:
+  config_dir: tools/configs
+  external_mcp_enable: false   # 外部MCP服务（需先实现 MCPClient）
+
+knowledge:
+  docs_dir: knowledge/docs
+
+logging:
+  level: INFO

@@ -1,0 +1,23 @@
+name: ctf_workflow
+description: CTF解题通用工作流
+nodes:
+  - id: recon
+    type: agent
+    config:
+      agent_id: recon_agent
+      task: "对目标进行信息收集"
+  - id: analyze
+    type: agent
+    config:
+      agent_id: web_agent
+      task: "分析可能存在漏洞类型"
+  - id: exploit
+    type: agent
+    config:
+      agent_id: exploit_agent
+      task: "尝试利用漏洞获取flag"
+edges:
+  - from: recon
+    to: analyze
+  - from: analyze
+    to: exploit

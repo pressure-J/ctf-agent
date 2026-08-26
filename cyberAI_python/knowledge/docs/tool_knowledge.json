@@ -1,0 +1,10 @@
+[
+  {
+    "id": "tool_knowledge_1",
+    "title": "工具知识-示例条目",
+    "content": "内置工具的使用方法、参数说明、调用示例...",
+    "tags": [
+      "tool_knowledge"
+    ]
+  }
+]

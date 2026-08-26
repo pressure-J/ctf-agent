@@ -1,0 +1,11 @@
+name: recon_workflow
+description: 信息收集自动化流程
+nodes:
+  - id: subdomain
+    type: tool
+    config: {name: subfinder_enum, params: {domain: ${input.domain}}}
+  - id: probe
+    type: agent
+    config: {agent_id: recon_agent, task: "HTTP探测存活子域"}
+edges:
+  - {from: subdomain, to: probe}
