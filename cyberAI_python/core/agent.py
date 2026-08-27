@@ -3,7 +3,7 @@ Agent核心模块 - 完整版
 实现与Go版CyberStrikeAI 100%对齐的功能
 """
 
-from openai import OpenAI
+from core.llm import LLMClient
 from typing import List, Dict, Any, Optional, Callable, Union
 import json
 from dotenv import load_dotenv
@@ -82,11 +82,8 @@ class Agent:
         self.temperature = temperature
         self.config = config or {}
         
-        # LLM客户端
-        self.client = OpenAI(
-            api_key=os.getenv("DEEPSEEK_API_KEY"),
-            base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-        )
+        # LLM客户端（统一走 core/llm.py, 换模型只改那一处）
+        self.llm = LLMClient(model=self.model, temperature=self.temperature)
         
         # 系统提示词
         self.system_prompt = system_prompt or self._default_system_prompt()
@@ -104,6 +101,7 @@ class Agent:
         
         # 记忆系统
         self.memory_enabled = self.config.get("memory_enabled", True)
+        self.memory: List[str] = []  # 短期经验记忆(think() 里读写)
         
         # 并发控制
         self._lock = asyncio.Lock()
@@ -303,16 +301,11 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
     def _call_llm(self) -> Dict:
         """调用LLM"""
         
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=self.state.messages,
-            tools=self.tools if self.tools else None,
-            tool_choice="auto" if self.tools else None,
+        return self.llm.chat_with_tools(
+            self.state.messages,
+            self.tools,
             temperature=self.temperature,
-            max_tokens=2000
         )
-        
-        return response.model_dump()
     
     def _handle_tool_calls(self, assistant_message: Dict):
         """处理工具调用"""
@@ -369,15 +362,8 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": message}
         ]
-        
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=self.temperature,
-            max_tokens=2000
-        )
-        
-        return response.choices[0].message.content
+
+        return self.llm.chat(messages, temperature=self.temperature)
     
     def get_state(self) -> Dict:
         """获取Agent状态"""
