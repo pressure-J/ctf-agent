@@ -12,5 +12,12 @@ class TestBaseAgentAutoLoad(unittest.TestCase):
         self.assertIn("nmap_scan", names)
         self.assertIn("dns_lookup", a.core.tool_functions)
 
+    def test_whitelist_filter(self):
+        """BaseAgent(tools=[...]) 只桥接白名单工具, 避免全量撑爆 context"""
+        a = BaseAgent(name="R", tools=["dns_lookup", "nmap_scan"])
+        names = sorted(t["function"]["name"] for t in a.core.tools)
+        self.assertEqual(names, ["dns_lookup", "nmap_scan"])
+        self.assertNotIn("angr", names)
+
 if __name__=="__main__":
     unittest.main()

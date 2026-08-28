@@ -16,17 +16,20 @@ class BaseAgent:
                  tools: List[str] = None, config: Dict = None, auto_load: bool = True):
         self.name = name
         self.core = Agent(name=name, system_prompt=system_prompt, model=model, config=config)
-        self.tools = list(tools or [])          # 调用方额外指定的工具
+        self.tools = list(tools or [])          # 工具白名单(空=加载全部)
         if auto_load:
             self._load_tools()
 
     def _load_tools(self):
-        """自动加载 YAML 工具库并桥接进核心 Agent"""
+        """自动加载 YAML 工具库, 并按 self.tools 白名单桥接进核心 Agent。
+        self.tools 为空/None = 加载全部(向后兼容)。
+        """
         tm = ToolManager()
         tm.load_all("tools/configs")
-        tm.attach_to_agent(self.core)
+        limit = self.tools if self.tools else None
+        n = tm.attach_to_agent(self.core, names=limit)
         tool_names = [t["function"]["name"] for t in self.core.tools]
-        logger.info(f"BaseAgent '{self.name}' 已加载工具: {tool_names}")
+        logger.info(f"BaseAgent '{self.name}' 加载工具 {n} 个({tool_names})")
 
     def think(self, task: str, context: Dict = None) -> str:
         return self.core.think(task, context)

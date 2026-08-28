@@ -5,7 +5,7 @@
   2. attach_to_agent() 把注册表里的工具桥接给 Agent(能力→Agent)
   3. execute/aexecute  给工具执行加统一入口(同步/异步)
 """
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from tools.registry import ToolRegistry
 from tools.executor import ToolExecutor
 import logging
@@ -36,14 +36,20 @@ class ToolManager:
         logger.info(f"已从 {config_dir} 加载工具: {names}")
         return names
 
-    def attach_to_agent(self, agent) -> None:
-        """把注册表里的全部工具桥接给 Agent。
+    def attach_to_agent(self, agent, names: Optional[List[str]] = None,
+                        category: Optional[List[str]] = None) -> int:
+        """把注册表的工具桥接给 Agent, 可按白名单过滤。返回桥接工具数。
         原理: registry 每条工具存 {function, schema};
              Agent 需要两份 — schema 给LLM(self.tools) + func 执行(self.tool_functions)。
-             Agent.register_tool(name, description, func, parameters) 会同时填好这两份,
-             所以这里把每条工具的 schema 拆开调用它即可。
+             names=None 表示全部; category 按工具分类过滤。
+             这样"registry 是全部兵器库, 每个 Agent 只拿自己那部分给 LLM", 避免 91 份 schema 撑爆 context。
         """
-        for _name, tool in self.registry.tools.items():
+        n = 0
+        for name, tool in self.registry.tools.items():
+            if names is not None and name not in names:
+                continue
+            if category is not None and tool.get("category") not in category:
+                continue
             fdef = tool["schema"]["function"]
             agent.register_tool(
                 name=fdef["name"],
@@ -51,7 +57,9 @@ class ToolManager:
                 func=tool["function"],
                 parameters=fdef["parameters"],
             )
-        logger.info(f"已把 {len(self.registry.tools)} 个工具接入 Agent")
+            n += 1
+        logger.info(f"已把 {n} 个工具接入 Agent")
+        return n
 
     def list_tools(self, category: str = None, enabled_only: bool = True) -> List[str]:
         """列出工具"""
