@@ -38,6 +38,13 @@ app.add_middleware(
 
 # 全局实例
 tool_registry = ToolRegistry()
+# Web 侧也加载 YAML 工具(与 CLI 侧一致, 让 /api/tools 返回真实工具)
+from pathlib import Path as _Path
+for _y in sorted(_Path("tools/configs").glob("*.yaml")):
+    try:
+        tool_registry.register_from_yaml(str(_y))
+    except Exception:
+        pass
 database = Database()
 auth_manager = AuthManager(db=database)
 
