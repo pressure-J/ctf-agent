@@ -1,0 +1,122 @@
+---
+name: work-logic
+description: 业务逻辑
+---
+
+name: business-logic-burp
+description: 业务逻辑漏洞挖掘（Burp 驱动）速查。覆盖流程滥用、竞态条件、价格/数量篡改、优惠券滥用、多步状态机缺陷、密码重置绕过。全程通过 Burp MCP 工具完成抓包→改包→重放→枚举→OOB 验证，扫描器不可见，需人工推理。
+version: 1.0.0
+tags: [security, web, business-logic, burp, race-condition, idor]
+platform: windows
+tools_required:
+  - Burp Suite + MCP (mcp__burp__*)
+  - Python 3.x (PoC，仅标准库)
+  - references/web-auth-logic.md / web-race-condition.md
+Business Logic Bug Hunting — Burp 驱动速查
+业务逻辑漏洞的判定标准（过项目自检门才输出）：① 实际发了验证请求 ② 拿到真实响应 ③ 造成实际危害 ④ 利用链完整可复现 ⑤ 过黑名单 ⑥ 过等级准入。仅"触发报错/改包有反应"不算危害。
+禁报清单：CORS/CRLF/Cache-Poison/Host-Header/Smuggling/GraphQL 内省 默认不报，除非展示完整利用链+实际数据泄露。
+
+何时用
+目标有订单/支付/优惠券/库存/审批/配额/邀请/试用/会员/状态流转
+
+问题不在参数解析层，而在「检查时机、检查了哪些业务条件、状态能否越界」
+
+场景关键词：改价、负数量、跳步、重复领取、并发、找回密码、角色字段
+
+Burp 工具链速查
+场景	Burp MCP 工具	说明
+拉取流量做基线	mcp__burp__get_proxy_http_history / _regex	按接口关键词过滤：pay coupon reset transfer order
+改包重放（单点验证）	mcp__burp__send_http1_request / send_http2_request	Repeater 能力，直接发改好的请求
+建 Repeater 标签逐步调	mcp__burp__create_repeater_tab / _http2	现代站用 HTTP/2 变体
+枚举/爆破（ID、验证码、状态码）	mcp__burp__send_to_intruder	Numbers / Dates / Custom payload
+并发竞态	mcp__burp__send_to_intruder + Repeater 并行组	多个相同请求同时打
+抓实时请求	mcp__burp__set_proxy_intercept_state	开/关拦截
+OOB 盲测	mcp__burp__generate_collaborator_payload + get_collaborator_interactions	SSRF/盲 XXE/回调探测
+编码/解码	mcp__burp__base64_encode/decode、url_encode/decode	解 Cookie/混淆 ID，构造 Payload
+随机串	mcp__burp__generate_random_string	验证码/Token 猜测
+暂停引擎	mcp__burp__set_task_execution_engine_state	大批量前先暂停，避免误伤
+五步流程
+基线：get_proxy_http_history_regex 按关键词拉出业务接口，用 base64_decode 解出可疑 Cookie/ID 的真实格式。
+
+状态机建模：画出「正常流程每一步 + 每个关键状态」→ 列出「一次性的动作 / 只有一次校验的动作 / 检查与更新分离的动作」。
+
+分类打击：对照下方攻击面→Burp 动作映射，逐个接口用 Repeater 改造请求验证。
+
+竞态补充：对「领取一次、余额扣减、库存扣减、验证码发送」类接口打并发。
+
+过自检门：按顶部标准过滤 → 只留能复现且有实际危害的 → 写报告（🔴致命/🔴高危/🟡中危/🟢低危 + 修复方案）。
+
+攻击面 → Burp 动作映射
+A. 越权（IDOR / 垂直 / 水平）
+参考 [引用:references/web-auth-logic.md §1-3]
+
+动作：
+1. Repeater 里把 id/uid/order_id/invoice_id/file 改为 +1 / -1 / 他人值，用A的Cookie请求B的资源
+2. 垂直越权：路径变形(/admin→/%61dmin、/admin;/users)、HTTP方法切换(POST/PUT/PATCH)、
+   X-Original-URL / X-Rewrite-URL 头、role=admin 参数
+3. JWT：解码 payload 改 role，验签不严直接过；或试 alg:none
+4. Mass Assignment：注册/改资料接口注入 isAdmin/role/approved/email_verified 字段
+验证要点：改 Cookie/ID 后返回了他人或管理员的真实数据（字段名、金额、手机号脱敏记录）。
+
+B. 金额 / 数量 / 状态字段篡改
+参考 [引用:references/web-auth-logic.md §4]
+
+动作：
+- quantity=-1 / 0.02 / 1.5 / 999999999  （负数退款、小数0元购、整数溢出归零）
+- price=0.01 / 负数  （客户端传价）
+- 删字段：把 prizeIdList 数组整个删掉/置空 → 服务端回退到免费
+- 改状态：order.status → refunded/shipped/paid、payment_status=paid（服务端是否信任客户端）
+- 优惠叠加：couponid[0]+couponid[1]、-5 元券买 3 元商品 → 账户得余额
+- 币种互换：CNY→JPY/RUB 同数值；汇率差套利
+- 精度/舍入：充值 0.019 → 网关扣 0.01、钱包记 0.02，循环薅
+验证要点：必须走到下单/支付/入账成功才叫危害；仅"改了响应变了"不算。整数溢出测试前先确认不会打崩支付服务。
+
+C. 竞态条件
+参考 [引用:references/web-race-condition.md]
+
+动作（对"领取/余额/库存/验证码/首次优惠"接口）：
+1. 抓请求 → 复制 20+ 份完全相同的请求
+2. send_to_intruder 或 Repeater 并行组同时发
+3. 观察是否有 ≥2 个都成功（检查与扣减非原子 → 双花）
+4. 经典：双花礼品卡、重复领券、提现超余额、并发注册同邮箱、多设备并发开会员叠时长
+5. 绕过验证码次数限制：高并发同 payload 打穿计数器
+验证要点：至少两个请求都成功且造成重复收益；单次成功不算。Python 并发 PoC（threading+标准库）写进报告。
+
+D. 流程跳步 / 状态机
+动作：
+- 支付：直接调确认订单接口，跳过支付步骤（服务端是否校验 payment_status）
+- 重置密码：跳过验证码步骤直达改密接口；旧 token/已过期 token 是否仍可用
+- 2FA：密码验证后直接访问受保护页，会话是否在 2FA 完成前就建立
+- 非法状态迁移：未支付→发货、未发货→退款、免费→领取奖品
+- 路径截断绕过登录过滤：/../../index.jsp、/;/admin/doLogin.action（Filter 用 getRequestURI 的场景）
+验证要点：链中每一步都要真实请求过；跳过的步骤确实被服务端跳过且产生了越权结果。
+
+E. 验证码 / 密码重置 / 优惠券 / 邀请
+参考 [引用:references/web-auth-logic.md §5]
+
+动作：
+- 验证码：改接收人 phone/email、删 code 字段、code 置空/000000、跨会话复用、爆破 4-6 位数字
+- 重置 Token：响应体/Referer 里直接返回 token；md5(rand())/时间戳可预测；改 uid/email 换目标
+- 邀请裂变：A 邀请 B、B 邀请 C 无限套信用积分；优惠券重复使用/叠加超 100%
+- 越权传参：改 user_id / target_user 指向他人
+验证要点：真实改掉了他人的密码 / 真实重复领到了奖励才报。爆破用 send_to_intruder Numbers payload，注意频率限制和次数上限，别打爆账户锁定。
+
+F. OOB 辅助
+- 盲 SSRF：图片导入/webhook/预览 URL 注入 Collaborator payload，get_collaborator_interactions 查回连
+- 盲 XXE / 回调：同样的 payload 套路
+- 仅当拿到敏感数据/内网回显才算 SSRF 危害，仅回连不算
+报告与过滤
+逐项过自检门六问；命中黑名单（用户名枚举/弱 Token 无利用/401/403/功能缺陷/短信轰炸）直接丢。
+
+等级：🔴致命=拿权限或核心库拖库；🔴高危=任意密码重置/越权敏感信息/支付造假；🟡中危=存储XSS/敏感CSRF/非核心注入/弱口令；🟢低危=受限越权/特殊条件。
+
+报告必须：每个漏洞带危害/前提/利用可行性 + 修复方案；敏感数据脱敏；命令用 <target> 占位。
+
+同类型漏洞 >3 个只报代表；无法复现 / 条件极苛刻不收录。
+
+参考
+越权/支付/密码重置/会话/API鉴权：[引用:references/web-auth-logic.md]
+
+竞态：[引用:references/web-race-condition.md]
+
+现有深度 playbook：C:/Users/yuji1/.claude/skills/business-logic-vulnerabilities/（SKILL/METHODOLOGY/CHECKLIST/SCENARIOS）
