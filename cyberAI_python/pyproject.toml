@@ -1,0 +1,4 @@
+# CyberStrikeAI Python — 项目元数据 & 测试入口声明
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
