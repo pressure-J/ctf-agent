@@ -32,3 +32,13 @@ class AuthManager:
 
     def verify_token(self, token: str):
         return self.tokens.verify_token(token)
+
+    def bootstrap_admin(self, password: Optional[str] = None) -> Optional[str]:
+        """对齐 Go 首启 bootstrap: 无 admin 用户则创建内置 admin 账号(随机密码), 返回密码; 已存在返回 None"""
+        if self.db.get_user("admin"):
+            return None
+        import secrets, time
+        pwd = password or secrets.token_urlsafe(16)
+        self.db.create_user("admin", hash_password(pwd), "admin@local")
+        logger.info("[bootstrap] 已创建内置 admin 账号 (role=admin), 初始密码: %s", pwd)
+        return pwd
