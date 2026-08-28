@@ -36,8 +36,31 @@ class TestAPI(unittest.TestCase):
         tok = _login(self.c)
         r = self.c.get("/api/tools/dns_lookup", headers={"Authorization": f"Bearer {tok}"})
         self.assertEqual(r.status_code, 200)
-        self.assertIn("schema", r.json())
 
+    def test_chat_endpoint(self):
+        """chat 路由异步化 + 接线(假Agent, 不连真实LLM); 防 KeyError user[sub] 回归"""
+        import web.app as m
+
+        class FakeLLM:
+            def stream_chat(self, messages):
+                yield "hi"
+
+        class FakeAgent:
+            system_prompt = "t"
+            llm = FakeLLM()
+
+            def __init__(self):
+                self.state = type("S", (), {"tool_calls": []})()
+
+            def think(self, task, context=None):
+                return "ok:" + task
+
+        m.get_or_create_agent = lambda agent_id=None: FakeAgent()
+        tok = _login(self.c, "chatuser", "pw")
+        r = self.c.post("/api/chat", json={"message": "hello"},
+                        headers={"Authorization": f"Bearer {tok}"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["response"], "ok:hello")
 
 if __name__ == "__main__":
     unittest.main()

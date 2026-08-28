@@ -4,6 +4,8 @@ FastAPI Web后端 - 完整版
 """
 
 from fastapi import FastAPI, HTTPException, WebSocket, Depends, status
+from fastapi.responses import StreamingResponse
+from starlette.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
@@ -143,16 +145,15 @@ async def chat(
     # 获取或创建对话
     conversation_id = request.conversation_id
     if not conversation_id:
-        conversation_id = database.create_conversation(user["id"])
+        conversation_id = database.create_conversation(user["sub"])
     
     # 获取Agent
     agent = get_or_create_agent(request.agent_id)
     
-    # 执行任务
-    response = agent.think(
-        task=request.message,
-        context={"user_id": user["id"], "conversation_id": conversation_id}
-    )
+    # 执行任务(异步化: 丢线程池, 避免同步阻塞事件循环拖累其他请求)
+    response = await run_in_threadpool(
+        agent.think, request.message,
+        {"user_id": user["sub"], "conversation_id": conversation_id})
     
     # 保存消息
     database.save_message(
@@ -174,6 +175,36 @@ async def chat(
         tool_calls=agent.state.tool_calls
     )
 
+@app.post("/api/chat/stream")
+async def chat_stream(
+    request: ChatRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """流式对话(SSE): 逐 token 回传, 长回复可在 UI 打字机式显示。
+    注意: 当前为无工具流式; 带工具的循环流式后续接入。
+    """
+    user = auth_manager.verify_token(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="无效的Token")
+
+    conversation_id = request.conversation_id or database.create_conversation(user["sub"])
+    agent = get_or_create_agent(request.agent_id)
+    messages = [
+        {"role": "system", "content": agent.system_prompt},
+        {"role": "user", "content": request.message},
+    ]
+
+    def gen():
+        try:
+            for chunk in agent.llm.stream_chat(messages):
+                yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+
+    database.save_message(conversation_id, "user", request.message)
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
 @app.get("/api/conversations")
 async def list_conversations(
     credentials: HTTPAuthorizationCredentials = Depends(security)
@@ -185,7 +216,7 @@ async def list_conversations(
     if not user:
         raise HTTPException(status_code=401, detail="未授权")
     
-    conversations = database.list_conversations(user["id"])
+    conversations = database.list_conversations(user["sub"])
     
     return {"conversations": conversations}
 
