@@ -38,8 +38,8 @@ app.add_middleware(
 
 # 全局实例
 tool_registry = ToolRegistry()
-auth_manager = AuthManager()
 database = Database()
+auth_manager = AuthManager(db=database)
 
 # 安全认证
 security = HTTPBearer()
@@ -100,9 +100,7 @@ async def login(request: LoginRequest):
         )
     
     # 生成Token
-    access_token = auth_manager.create_access_token(
-        data={"sub": user["id"], "username": user["username"]}
-    )
+    access_token = auth_manager.create_access_token(user)
     
     return LoginResponse(
         access_token=access_token,

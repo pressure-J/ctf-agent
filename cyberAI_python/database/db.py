@@ -16,7 +16,9 @@ from .models import Base, User, Conversation, Message, Agent, ToolExecution, Wor
 class Database:
     """数据库管理类"""
     
-    def __init__(self, database_url: str = "sqlite:///cyberstrike.db"):
+    def __init__(self, database_url: str = "sqlite:///data/cyberstrike.db"):
+        import os
+        os.makedirs("data", exist_ok=True)
         self.engine = create_engine(database_url)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         
