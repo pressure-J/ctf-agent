@@ -86,31 +86,56 @@ class ToolRegistry:
         return tool_name
     
     def _create_command_executor(self, config: Dict) -> Callable:
-        """创建命令执行器"""
-        
+        """创建命令执行器(支持完整协议: positional/flag/template + position/default)。
+        与 Go 版 YAML 协议对齐:
+          - positional+position: 按 position 排序的位置参数
+          - format=flag:         append flag + 值 (bool 型只加 flag: -O)
+          - format=template:     template.replace("{value}", 值) 如 "-T{value}" -> "-T4"
+        """
         import subprocess
-        
+        params = config.get("parameters", []) or []
+
         def executor(**kwargs):
-            command = config.get("command", "")
-            args = config.get("args", [])
-            
-            # 构建命令
-            cmd_parts = [command] + args
-            
-            # 添加动态参数
-            for param_name, param_value in kwargs.items():
-                cmd_parts.append(str(param_value))
-            
-            # 执行
-            result = subprocess.run(
-                cmd_parts,
-                capture_output=True,
-                text=True,
-                timeout=config.get("timeout", 60)
-            )
-            
-            return result.stdout if result.returncode == 0 else result.stderr
-        
+            cmd = [config.get("command", "")]
+            cmd += list(config.get("args", []) or [])
+
+            # ① positional: 按 position 排序(缺省排最后)
+            pos = [p for p in params
+                   if p.get("format") == "positional" or p.get("position") is not None]
+            pos.sort(key=lambda p: p.get("position", 99))
+            for p in pos:
+                v = kwargs.get(p["name"], p.get("default"))
+                if v is None or v == "":
+                    continue
+                cmd.append(str(v))
+
+            # ② flag / template / 其他
+            for p in params:
+                if p in pos:
+                    continue
+                v = kwargs.get(p["name"], p.get("default"))
+                if v is None or v == "":
+                    continue
+                f = p.get("format")
+                if f == "flag":
+                    if p.get("type") == "bool":
+                        if str(v).lower() in ("true", "1", "yes"):
+                            cmd.append(p.get("flag", ""))
+                    else:
+                        cmd.append(p.get("flag", ""))
+                        cmd.append(str(v))
+                elif f == "template":
+                    cmd.append(p.get("template", "{value}").replace("{value}", str(v)))
+                else:
+                    cmd.append(str(v))
+
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True,
+                                        timeout=config.get("timeout", 60))
+                return result.stdout if result.returncode == 0 else result.stderr
+            except Exception as e:
+                return f"命令执行失败: {e}"
+
         return executor
     
     def _build_schema(self, config: Dict) -> Dict:
