@@ -23,3 +23,6 @@ chromadb>=0.4
 
 # WebSocket 通知
 websockets>=12
+
+# 测试
+pytest>=8.0
