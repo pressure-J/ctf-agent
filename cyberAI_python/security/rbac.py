@@ -1,9 +1,7 @@
 """
-RBAC 权限控制
+RBAC 权限控制 - 角色 -> 权限点集合; 支持通配 (chat.* / *)。
 """
 from typing import List, Dict
-import logging
-logger = logging.getLogger(__name__)
 
 ROLE_PERMISSIONS: Dict[str, List[str]] = {
     "admin": ["*"],
@@ -11,9 +9,15 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
     "guest": ["chat.create"],
 }
 
+
 class RBAC:
     def check(self, role: str, permission: str) -> bool:
-        raise NotImplementedError
+        for p in ROLE_PERMISSIONS.get(role, []):
+            if p == "*" or self._match(p, permission):
+                return True
+        return False
 
-    def require(self, permission: str):
-        raise NotImplementedError
+    def _match(self, pattern: str, permission: str) -> bool:
+        if pattern.endswith(".*"):
+            return permission.startswith(pattern[:-1])
+        return pattern == permission

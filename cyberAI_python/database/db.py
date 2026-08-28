@@ -75,6 +75,15 @@ class Database:
         
         return None
     
+    def get_user_with_password(self, username: str) -> Optional[Dict]:
+        """认证专用: 返回含 password_hash 的用户(仅供登录比对, 常规查询不暴露)"""
+        with self.get_session() as session:
+            u = session.query(User).filter(User.username == username).first()
+            if u:
+                return {"id": u.id, "username": u.username,
+                        "password_hash": u.password_hash, "role": u.role}
+        return None
+
     # ========== 对话操作 ==========
     
     def create_conversation(self, user_id: str, title: str = None) -> str:

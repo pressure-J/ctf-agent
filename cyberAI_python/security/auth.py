@@ -1,28 +1,34 @@
 """
-认证管理 - 登录/注册/会话
+认证管理 - 注册 / 登录 / 令牌。串联: db(取用户) + password(哈希比) + token(JWT)。
 """
-from typing import Dict, Optional
+from typing import Optional, Dict
+from security.password import hash_password, verify_password
 from security.token import TokenManager
 import logging
 logger = logging.getLogger(__name__)
 
-class AuthManager:
-    def __init__(self, db=None):
-        self.db = db
-        self.tokens = TokenManager(secret="CHANGE_ME")  # TODO: 从.env读
-        # TODO: 登录失败计数
 
-    def authenticate(self, username: str, password: str) -> Optional[Dict]:
-        raise NotImplementedError
+class AuthManager:
+    def __init__(self, db, secret: str = "CHANGE_ME_TO_RANDOM", expire_minutes: int = 1440):
+        self.db = db
+        self.tokens = TokenManager(secret, expire_minutes)
 
     def register(self, username: str, password: str, email: str = None) -> Optional[Dict]:
-        raise NotImplementedError
+        """注册(返回不含 hash 的用户信息); 用户名已存在返回 None"""
+        if self.db.get_user(username):
+            return None
+        uid = self.db.create_user(username, hash_password(password), email)
+        return self.db.get_user(username)
 
-    def create_access_token(self, data: Dict) -> str:
-        return self.tokens.create_token(data.get("sub"), data.get("username"), data.get("role", "user"))
+    def authenticate(self, username: str, password: str) -> Optional[Dict]:
+        """校验用户名密码, 成功返回 {id, username, role}, 失败返回 None"""
+        row = self.db.get_user_with_password(username)
+        if not row or not verify_password(password, row["password_hash"]):
+            return None
+        return {"id": row["id"], "username": row["username"], "role": row["role"]}
 
-    def verify_token(self, token: str) -> Optional[Dict]:
+    def create_access_token(self, user: Dict) -> str:
+        return self.tokens.create_token(user["id"], user["username"], user.get("role", "user"))
+
+    def verify_token(self, token: str):
         return self.tokens.verify_token(token)
-
-    def revoke_token(self, token: str):
-        self.tokens.revoke_token(token)
