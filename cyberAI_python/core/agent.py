@@ -50,6 +50,20 @@ class AgentState:
         self.iteration = 0
         self.status = "idle"
 
+    def to_dict(self) -> Dict[str, Any]:
+        """序列化状态(轻量 checkpoint 用)"""
+        return {"messages": self.messages, "tool_calls": self.tool_calls,
+                "iteration": self.iteration, "status": self.status,
+                "context": self.context}
+
+    def from_dict(self, data: Dict[str, Any]):
+        """从快照恢复状态"""
+        self.messages = data.get("messages", [])
+        self.tool_calls = data.get("tool_calls", [])
+        self.iteration = data.get("iteration", 0)
+        self.status = data.get("status", "idle")
+        self.context = data.get("context", {})
+
 
 class Agent:
     """
@@ -298,6 +312,67 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
         
         return "达到最大迭代次数，未能完成任务"
     
+    def stream_think(self, task: str, context: Dict[str, Any] = None):
+        """流式 think(带工具的事件流式): 逐个 yield 事件。
+        事件: {'type':'llm','delta':..} / {'type':'tool_call','name','arguments'}
+              {'type':'tool_result','tool_calls':..} / {'type':'done','answer'} / {'type':'error'}
+        前端可实时看到 LLM 打字 + 工具调用过程(对齐 Go 的工具过程可视化)。
+        """
+        self.state.clear(); self.state.status = "running"
+        self.state.add_message("system", self.system_prompt)
+        if context:
+            self.state.context.update(context)
+            self.state.add_message("system", f"已知信息:\n{json.dumps(context, ensure_ascii=False)}")
+        if self.memory_enabled and self.memory:
+            self.state.add_message("system", "历史经验:\n" + "\n".join(self.memory[-10:]))
+        self.state.add_message("user", task)
+
+        for iteration in range(self.max_iterations):
+            self.state.iteration = iteration + 1
+            try:
+                response = self._call_llm()
+                msg = response["choices"][0]["message"]
+                content = msg.get("content") or ""
+                if content:
+                    yield {"type": "llm", "delta": content}
+
+                if msg.get("tool_calls"):
+                    for tc in msg["tool_calls"]:
+                        yield {"type": "tool_call",
+                               "name": tc["function"]["name"],
+                               "arguments": tc["function"]["arguments"]}
+                    self._handle_tool_calls(msg)
+                    yield {"type": "tool_result", "tool_calls": self.state.tool_calls}
+                    continue
+
+                if self.memory_enabled:
+                    self.memory.append(f"任务: {task[:100]}")
+                    self.memory.append(f"结果: {content[:100]}")
+                self.state.status = "completed"
+                yield {"type": "done", "answer": content}
+                return
+            except Exception as e:
+                yield {"type": "error", "message": str(e)}
+                self.state.add_message("system", f"错误: {str(e)}")
+
+        self.state.status = "max_iterations_reached"
+        yield {"type": "done", "answer": self.state.messages[-1].get("content", "")}
+
+    def save_checkpoint(self, path: str):
+        """保存 Agent 状态快照(轻量 checkpoint, 供中断恢复/审计)"""
+        import json as _json
+        with open(path, "w", encoding="utf-8") as f:
+            _json.dump({"state": self.state.to_dict(), "memory": self.memory},
+                       f, ensure_ascii=False, indent=2)
+
+    def restore_checkpoint(self, path: str):
+        """从快照恢复状态"""
+        import json as _json
+        with open(path, encoding="utf-8") as f:
+            data = _json.load(f)
+        self.state.from_dict(data["state"])
+        self.memory = data.get("memory", [])
+
     def _call_llm(self) -> Dict:
         """调用LLM"""
         

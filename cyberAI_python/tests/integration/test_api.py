@@ -64,6 +64,29 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["response"], "ok:hello")
 
+    def test_chat_stream_events(self):
+        """带工具循环的事件流式(假LLM): tool_call/tool_result/done + DONE"""
+        from web.routers import chat as chat_router
+        from core.agent import Agent
 
-if __name__ == "__main__":
-    unittest.main()
+        class FakeLLM:
+            def chat_with_tools(self, messages, tools, temperature=None):
+                if not any(m["role"] == "tool" for m in messages):
+                    return {"choices": [{"message": {"role": "assistant", "content": None,
+                        "tool_calls": [{"id": "c1", "type": "function",
+                            "function": {"name": "fake_tool", "arguments": "{}"}}]}}]}
+                return {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
+
+        ag = Agent(name="s"); ag.llm = FakeLLM()
+        ag.register_tool("fake_tool", "t", lambda: "okx", {})
+        chat_router.get_or_create_agent = lambda agent_id=None: ag
+        tok = _login(self.c, "pw")
+        r = self.c.post("/api/chat/stream", json={"message": "hi"},
+                        headers={"Authorization": f"Bearer {tok}"})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("tool_call", r.text)
+        self.assertIn("done", r.text)
+        self.assertIn("[DONE]", r.text)
+
+
+if __name__ == "__main__":    unittest.main()

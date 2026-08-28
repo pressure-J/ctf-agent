@@ -32,15 +32,15 @@ async def chat_stream(request: ChatRequest, credentials: HTTPAuthorizationCreden
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效的Token")
     conversation_id = request.conversation_id or database.create_conversation(user["sub"])
     agent = get_or_create_agent(request.agent_id)
-    messages = [{"role": "system", "content": agent.system_prompt},
-                {"role": "user", "content": request.message}]
 
     def gen():
         try:
-            for chunk in agent.llm.stream_chat(messages):
-                yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+            # 带工具循环的事件流式: LLM 增量 + 工具调用过程 实时回传
+            for ev in agent.stream_think(request.message,
+                                         {"user_id": user["sub"], "conversation_id": conversation_id}):
+                yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
         except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
         yield "data: [DONE]\n\n"
 
     database.save_message(conversation_id, "user", request.message)
