@@ -1,18 +1,32 @@
 """
-Agent 基类 - 组合优于继承: 持有 core.agent.Agent(核心循环)+自己的策略
+Agent 基类 - 组合优于继承: 持有 core.agent.Agent(核心循环) + 自动加载 YAML 工具库。
+原理: Agent 不自己下楼拿工具; 这里用 ToolManager 做"自动上弹药"——
+      __init__ 时 load_all(tools/configs) + attach_to_agent(core),
+      于是"在 tools/configs 放一个 YAML, 任何 BaseAgent 天生就用得上"。
 """
 from typing import Dict, Any, List, Optional
 from core.agent import Agent
+from core.tools import ToolManager
 import logging
 logger = logging.getLogger(__name__)
 
+
 class BaseAgent:
     def __init__(self, name: str, system_prompt: str = None, model: str = "deepseek-chat",
-                 tools: List[str] = None, config: Dict = None):
+                 tools: List[str] = None, config: Dict = None, auto_load: bool = True):
         self.name = name
         self.core = Agent(name=name, system_prompt=system_prompt, model=model, config=config)
-        self.tools = tools or []
-        # TODO: 从 ToolManager 注册工具
+        self.tools = list(tools or [])          # 调用方额外指定的工具
+        if auto_load:
+            self._load_tools()
+
+    def _load_tools(self):
+        """自动加载 YAML 工具库并桥接进核心 Agent"""
+        tm = ToolManager()
+        tm.load_all("tools/configs")
+        tm.attach_to_agent(self.core)
+        tool_names = [t["function"]["name"] for t in self.core.tools]
+        logger.info(f"BaseAgent '{self.name}' 已加载工具: {tool_names}")
 
     def think(self, task: str, context: Dict = None) -> str:
         return self.core.think(task, context)

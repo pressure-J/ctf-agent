@@ -83,6 +83,7 @@ class ToolRegistry:
             category=config.get("category", "general"),
             enabled=config.get("enabled", True)
         )
+        return tool_name
     
     def _create_command_executor(self, config: Dict) -> Callable:
         """创建命令执行器"""

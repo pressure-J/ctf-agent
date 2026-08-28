@@ -1,0 +1,16 @@
+name: dns_lookup
+description: 查询域名的 DNS 解析记录
+category: recon
+command: dig
+args: []
+timeout: 15
+enabled: true
+parameters:
+  - name: target
+    type: string
+    description: 要查询的域名
+    required: true
+  - name: record_type
+    type: string
+    description: DNS记录类型(A/AAAA/MX/TXT)
+    required: false
