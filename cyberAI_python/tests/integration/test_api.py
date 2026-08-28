@@ -1,6 +1,4 @@
-"""API 集成测试: Web 登录 + 鉴权 + 工具列表(真实 app, TestClient)。
-覆盖 web/app.py 的接线。运行: pytest tests/ -q
-"""
+"""API 集成测试: 登录/鉴权/工具/chat(真实 app + deps, TestClient)。"""
 import os, sys, unittest
 os.environ["OPENAI_API_KEY"] = "sk-test-mock"
 os.environ["DEEPSEEK_API_KEY"] = "sk-test-mock"
@@ -8,11 +6,14 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 
 from starlette.testclient import TestClient
+from web import deps
 import web.app as appmod
 
 
-def _login(c, u="apitest", pwd="pw123"):
-    appmod.auth_manager.register(u, pwd, u + "@x.com")  # 幂等
+def _login(c, pwd="pw12"):
+    import time
+    u = f"u{time.time_ns() % 100000000}"   # 每次唯一用户名, 避免跨运行密码冲突
+    deps.auth_manager.register(u, pwd, u + "@x.com")
     r = c.post("/api/auth/login", json={"username": u, "password": pwd})
     assert r.status_code == 200, r.text
     return r.json()["access_token"]
@@ -36,10 +37,11 @@ class TestAPI(unittest.TestCase):
         tok = _login(self.c)
         r = self.c.get("/api/tools/dns_lookup", headers={"Authorization": f"Bearer {tok}"})
         self.assertEqual(r.status_code, 200)
+        self.assertIn("schema", r.json())
 
     def test_chat_endpoint(self):
-        """chat 路由异步化 + 接线(假Agent, 不连真实LLM); 防 KeyError user[sub] 回归"""
-        import web.app as m
+        """chat 异步化接线(假Agent); 防 verify_token用sub 回归"""
+        from web.routers import chat as chat_router
 
         class FakeLLM:
             def stream_chat(self, messages):
@@ -55,12 +57,13 @@ class TestAPI(unittest.TestCase):
             def think(self, task, context=None):
                 return "ok:" + task
 
-        m.get_or_create_agent = lambda agent_id=None: FakeAgent()
-        tok = _login(self.c, "chatuser", "pw")
+        chat_router.get_or_create_agent = lambda agent_id=None: FakeAgent()
+        tok = _login(self.c, "pw")
         r = self.c.post("/api/chat", json={"message": "hello"},
                         headers={"Authorization": f"Bearer {tok}"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["response"], "ok:hello")
+
 
 if __name__ == "__main__":
     unittest.main()

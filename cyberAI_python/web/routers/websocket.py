@@ -1,5 +1,8 @@
-"""WebSocket路由 /ws 实时对话"""
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+"""WebSocket 实时路由"""
+import json
+from fastapi import APIRouter, WebSocket
+from starlette.concurrency import run_in_threadpool
+from web.deps import handle_websocket_chat
 
 router = APIRouter(tags=["websocket"])
 
@@ -9,7 +12,13 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            # TODO: -> 调 Agent -> 流式返回
-            await websocket.send_json({"type": "echo", "data": data})
-    except WebSocketDisconnect:
+            msg = json.loads(data)
+            if msg["type"] == "chat":
+                resp = await run_in_threadpool(handle_websocket_chat, msg)
+                await websocket.send_json(resp)
+            elif msg["type"] == "ping":
+                await websocket.send_json({"type": "pong"})
+    except Exception:
         pass
+    finally:
+        await websocket.close()
