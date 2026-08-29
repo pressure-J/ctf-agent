@@ -70,17 +70,10 @@ def execute_workflow_engine(workflow: Dict, input_data: Dict) -> Dict:
         results[node["id"]] = agent.think(node.get("task", ""), context={**input_data, **results})
     return results
 
-def search_knowledge_base(query: str, top_k: int) -> List[Dict]:
-    """搜索知识库(简化为关键词匹配; 完整 RAG 见 knowledge/ 包)"""
-    docs_dir = Path("knowledge/docs")
-    hits = []
-    for fp in sorted(docs_dir.glob("*.md")):
-        text = fp.read_text(encoding="utf-8")
-        if query.lower() in text.lower():
-            hits.append({"file": fp.name, "preview": text[:120]})
-            if len(hits) >= top_k:
-                break
-    return hits
+def search_knowledge_base(query: str, top_k: int = 5) -> List[Dict]:
+    """向量检索知识库(docs+skills): 余弦 TopK, 对齐 Go internal/knowledge 的纯向量检索"""
+    from knowledge.retriever import retrieve
+    return retrieve(query, top_k=top_k)
 
 def get_active_agents() -> List:
     """当前活跃 Agent(占位, 后续与 orchestrator 对接)"""

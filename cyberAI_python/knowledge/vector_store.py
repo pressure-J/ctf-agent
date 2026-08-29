@@ -1,24 +1,23 @@
 """
-向量存储 - RAG 索引层
-实现选择: chromadb(内嵌最简单) / faiss(高性能) / sqlite-vec(轻量)
+向量存储 - 存向量+元数据, 余弦相似检索(TopK + 阈值)。
+normalized 后余弦 = 点积, O(N) 遍历即可(小规模够用)。
 """
-from typing import List, Dict
-import logging
-logger = logging.getLogger(__name__)
-
 class VectorStore:
-    def __init__(self, backend: str = "chromadb", persist_dir: str = "data/vectors"):
-        self.backend = backend
-        # TODO: 初始化对应后端
+    def __init__(self, dim: int):
+        self.dim = dim
+        self.items = []   # [{id,text,source,vec}]
 
-    def add(self, doc_id: str, text: str, vector: List[float], metadata: Dict = None):
-        raise NotImplementedError
+    def add(self, id_: str, text: str, source: str, vec):
+        self.items.append({"id": id_, "text": text, "source": source, "vec": vec})
 
-    def query(self, vector: List[float], top_k: int = 5) -> List[Dict]:
-        raise NotImplementedError
+    def search(self, qvec, top_k: int = 5, threshold: float = 0.0):
+        scored = []
+        for it in self.items:
+            s = sum(x * y for x, y in zip(qvec, it["vec"]))   # 点积=余弦(已归一)
+            if s >= threshold:
+                scored.append((s, it))
+        scored.sort(key=lambda x: -x[0])
+        return scored[:top_k]
 
-    def delete(self, doc_id: str):
-        raise NotImplementedError
-
-    def count(self) -> int:
-        raise NotImplementedError
+    def __len__(self):
+        return len(self.items)
