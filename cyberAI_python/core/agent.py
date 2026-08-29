@@ -119,6 +119,11 @@ class Agent:
         
         # 并发控制
         self._lock = asyncio.Lock()
+
+        # 上下文预算 + checkpoint(对齐 Go multiagent context_budget / eino_checkpoint)
+        self.context_budget: Optional[int] = None
+        self._ck_store = None
+        self._ck_id: Optional[str] = None
         
         logger.info(f"Agent '{self.name}' 初始化完成 (mode={self.mode.value})")
     
@@ -267,6 +272,7 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
         # Agent循环
         for iteration in range(self.max_iterations):
             self.state.iteration = iteration + 1
+            self._maybe_compress()
             logger.debug(f"迭代 {iteration + 1}/{self.max_iterations}")
             
             try:
@@ -280,6 +286,7 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
                 if assistant_message.get("tool_calls"):
                     # 处理工具调用
                     self._handle_tool_calls(assistant_message)
+                    self._maybe_checkpoint()
                 else:
                     # 没有工具调用，返回最终答案
                     final_answer = assistant_message.get("content", "")
@@ -329,6 +336,7 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
 
         for iteration in range(self.max_iterations):
             self.state.iteration = iteration + 1
+            self._maybe_compress()
             try:
                 response = self._call_llm()
                 msg = response["choices"][0]["message"]
@@ -342,6 +350,7 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
                                "name": tc["function"]["name"],
                                "arguments": tc["function"]["arguments"]}
                     self._handle_tool_calls(msg)
+                    self._maybe_checkpoint()
                     yield {"type": "tool_result", "tool_calls": self.state.tool_calls}
                     continue
 
@@ -372,6 +381,56 @@ Flag格式通常是：FLAG{{...}} 或 flag{{...}}
             data = _json.load(f)
         self.state.from_dict(data["state"])
         self.memory = data.get("memory", [])
+
+    def set_context_budget(self, max_tokens: int):
+        """开启上下文预算控制: 超预算自动压缩历史(防 context overflow)"""
+        self.context_budget = max_tokens
+        return self
+
+    def set_checkpoint(self, store, checkpoint_id: str):
+        """开启自动 checkpoint: 每轮工具处理后在 store 里存一条状态快照"""
+        self._ck_store = store
+        self._ck_id = checkpoint_id
+        return self
+
+    def _maybe_compress(self):
+        if not self.context_budget:
+            return
+        from core.context_budget import messages_tokens, compress_history
+        if messages_tokens(self.state.messages) > self.context_budget:
+            self.state.messages = compress_history(self.state.messages, self.context_budget)
+            logger.info("Agent '%s' 上下文超预算, 已压缩历史", self.name)
+
+    def _maybe_checkpoint(self):
+        if self._ck_store and self._ck_id:
+            self._ck_store.save(self._ck_id, self.state.to_dict())
+
+    def resume_from(self, checkpoint_id: str, store=None, task: str = None) -> str:
+        """从中断的 checkpoint 恢复继续执行(对齐 Go 中断恢复/continuation)。
+        恢复已存 messages/iteration, 追加新任务(如有), 从当前迭代继续跑循环(不 clear)。"""
+        store = store or self._ck_store
+        data, ok = store.load(checkpoint_id)
+        if not ok:
+            return "checkpoint 不存在"
+        self.state.from_dict(data)
+        self.state.status = "running"
+        if task:
+            self.state.add_message("user", task)
+        for iteration in range(self.state.iteration, self.max_iterations):
+            self.state.iteration = iteration + 1
+            self._maybe_compress()
+            try:
+                response = self._call_llm()
+                msg = response["choices"][0]["message"]
+                if msg.get("tool_calls"):
+                    self._handle_tool_calls(msg)
+                    self._maybe_checkpoint()
+                    continue
+                self.state.status = "completed"
+                return msg.get("content", "")
+            except Exception as e:
+                self.state.add_message("system", f"错误: {str(e)}")
+        return self.state.messages[-1].get("content", "")
 
     def _call_llm(self) -> Dict:
         """调用LLM"""
