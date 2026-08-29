@@ -26,3 +26,6 @@ websockets>=12
 
 # 测试
 pytest>=8.0
+
+# MCP 外部工具连接(需 <2 以用 FastMCP 稳定API)
+mcp<2
