@@ -1,25 +1,10 @@
+"""Plan-Execute 模式 - 先规划后执行(串行步骤)。
+复用 Supervisor 的子Agent-as-tool 机制, 只换引导提示词让主管先规划再按步骤派发。
+对齐 Go multiagent 的 plan_execute(planner ↔ executor)。
 """
-Plan-Execute 模式 - 先规划后执行, 执行失败可修订
-对比 Supervisor: Plan-Execute 串行步骤, Supervisor 并行分工
-"""
-from agents.base_agent import BaseAgent
-from typing import Dict, List
-import logging
-logger = logging.getLogger(__name__)
+from agents.supervisor_agent import SupervisorAgent
 
-class PlanExecuteAgent(BaseAgent):
-    def __init__(self, name: str = "PlanExecute", **kwargs):
-        super().__init__(name=name, **kwargs)
 
-    def _plan(self, task: str) -> List[Dict]:
-        """LLM 生成执行计划 [{step, action, params}]"""
-        raise NotImplementedError
-
-    def _execute_step(self, step: Dict) -> str:
-        raise NotImplementedError
-
-    def _revise(self, task: str, plan: List[Dict], results: List[str]) -> List[Dict]:
-        raise NotImplementedError
-
-    def think(self, task: str, context: Dict = None) -> str:
-        raise NotImplementedError
+class PlanExecuteAgent(SupervisorAgent):
+    _SYSTEM = ("你是一个 Plan-Execute 规划执行 Agent。先给出清晰的执行计划(步骤序号), "
+               "然后按步骤逐个调用专业子Agent/工具执行, 每一步参考上一步结果, 最后汇总汇报。")
