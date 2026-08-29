@@ -63,12 +63,10 @@ def get_or_create_agent(agent_id: str = None) -> Agent:
     return Agent(name="CTF专家")
 
 def execute_workflow_engine(workflow: Dict, input_data: Dict) -> Dict:
-    """执行工作流(简化为按 nodes 顺序调 agent; 完整 DAG 见 workflow/ 包)"""
-    results = {}
-    for node in workflow.get("nodes", []):
-        agent = get_or_create_agent(node.get("agent_id"))
-        results[node["id"]] = agent.think(node.get("task", ""), context={**input_data, **results})
-    return results
+    """执行工作流(真 DAG: 拓扑排序, 依赖满足才跑; 对齐 Go internal/workflow)"""
+    from workflow.engine import WorkflowEngine
+    definition = workflow.get("definition") or workflow   # 兼容 {definition}包装 或 裸 {nodes,edges}
+    return WorkflowEngine().execute(definition, input_data or {})
 
 def search_knowledge_base(query: str, top_k: int = 5) -> List[Dict]:
     """向量检索知识库(docs+skills): 余弦 TopK, 对齐 Go internal/knowledge 的纯向量检索"""

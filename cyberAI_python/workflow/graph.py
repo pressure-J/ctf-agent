@@ -1,10 +1,10 @@
-"""
-DAG 工作流图 - 节点+有向边, 拓扑排序定执行顺序
-"""
-from typing import Dict, List
-from workflow.node import WorkflowNode
+"""DAG 工作流图 - 节点+有向边; Kahn 拓扑排序 + 校验。"""
+from typing import Dict, List, Optional
+from collections import deque
+from workflow.node import WorkflowNode, NodeType
 import logging
 logger = logging.getLogger(__name__)
+
 
 class WorkflowGraph:
     def __init__(self):
@@ -19,14 +19,28 @@ class WorkflowGraph:
             self.nodes[from_id].add_output(to_id)
             self.nodes[to_id].add_input(from_id)
 
-    def topological_order(self) -> List[str]:
-        """Kahn 拓扑排序"""
-        raise NotImplementedError
-
-    @classmethod
-    def from_definition(cls, definition: Dict):
-        """从 {nodes:[...], edges:[{from,to}]} 构建"""
-        raise NotImplementedError
+    def topological_order(self) -> Optional[List[str]]:
+        """Kahn: 逐个找入度0的节点, 生成一个合法拓扑序(有环返回 None)"""
+        in_deg = {nid: len(n.inputs) for nid, n in self.nodes.items()}
+        q = deque(nid for nid, d in in_deg.items() if d == 0)
+        order = []
+        while q:
+            nid = q.popleft()
+            order.append(nid)
+            for o in self.nodes[nid].outputs:
+                in_deg[o] -= 1
+                if in_deg[o] == 0:
+                    q.append(o)
+        return order if len(order) == len(self.nodes) else None
 
     def validate(self) -> bool:
-        raise NotImplementedError
+        return self.topological_order() is not None
+
+    @classmethod
+    def from_definition(cls, definition: Dict) -> "WorkflowGraph":
+        g = cls()
+        for n in definition.get("nodes", []):
+            g.add_node(WorkflowNode(n["id"], NodeType(n.get("type", "agent")), n))
+        for e in definition.get("edges", []):
+            g.add_edge(e["from"], e["to"])
+        return g

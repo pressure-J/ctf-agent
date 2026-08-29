@@ -1,9 +1,6 @@
-"""
-工作流状态管理 - 每个节点结果写入共享状态, 下游读取
-"""
+"""工作流状态 - 共享输入 + 各节点结果, 支持 ${node.output} 引用解析。"""
 from typing import Dict, Any
-import logging
-logger = logging.getLogger(__name__)
+
 
 class WorkflowState:
     def __init__(self, initial: Dict = None):
@@ -17,8 +14,17 @@ class WorkflowState:
         return self.node_results.get(node_id)
 
     def resolve_variable(self, expr: str) -> Any:
-        """解析 ${node_id.output} 引用"""
-        raise NotImplementedError
+        """解析 ${node_id.output} / ${key} 引用"""
+        s = (expr or "").strip()
+        if s.startswith("${") and s.endswith("}"):
+            s = s[2:-1].strip()
+        if "." in s:                                   # ${node.字段}
+            nid, _, key = s.partition(".")
+            val = self.node_results.get(nid)
+            return val.get(key) if isinstance(val, dict) else None
+        if s in self.node_results:
+            return self.node_results[s]
+        return self.data.get(s)
 
     def snapshot(self) -> Dict:
         return {"data": self.data, "node_results": self.node_results}
