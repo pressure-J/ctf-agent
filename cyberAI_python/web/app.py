@@ -5,7 +5,9 @@ CyberStrikeAI Python Web 后端 - 精简版。
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import logging
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os, logging
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CyberStrikeAI Python",
@@ -19,6 +21,15 @@ from web.deps import database
 from web.routers import auth, chat, tools, agent, workflow, knowledge, admin, websocket
 for _r in (auth, chat, tools, agent, workflow, knowledge, admin, websocket):
     app.include_router(_r.router)
+
+# ---------- 轻量单页前端(静态托管, 对齐 Go 的 web/templates+static) ----------
+_FRONT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+app.mount("/static", StaticFiles(directory=os.path.join(_FRONT, "static")), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def index():
+    return FileResponse(os.path.join(_FRONT, "index.html"))
 
 
 @app.on_event("startup")

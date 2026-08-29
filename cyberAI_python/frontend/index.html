@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CyberStrikeAI Python</title><link rel="stylesheet" href="/static/css/style.css"></head><body>
+<div id="login-view" class="view">
+  <div class="card">
+    <h2>CyberStrikeAI 登录</h2>
+    <input id="u" placeholder="用户名" autocomplete="username">
+    <input id="p" type="password" placeholder="密码" autocomplete="current-password">
+    <button onclick="authLogin()">登录</button><div id="login-msg" class="msg"></div>
+  </div>
+</div>
+<div id="app-view" class="view" style="display:none">
+  <header><b>CyberStrikeAI</b><span id="who"></span><a href="#" onclick="authLogout()">退出</a></header>
+  <main>
+    <div id="log" class="log"></div>
+    <div class="input-bar">
+      <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button onclick="sendMsg()">发送</button>
+      <label class="chk"><input id="stream" type="checkbox" checked> 流式</label>
+    </div>
+  </main>
+</div>
+<script src="/static/js/app.js"></script><script src="/static/js/auth.js"></script><script src="/static/js/chat.js"></script>
+</body></html>
