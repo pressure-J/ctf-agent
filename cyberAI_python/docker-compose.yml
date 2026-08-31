@@ -5,8 +5,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - DATABASE_URL=sqlite:///data/cyberstrike.db
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - DEEPSEEK_API_BASE=${DEEPSEEK_API_BASE:-https://api.deepseek.com}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     volumes:
-      - ./data:/data
-  # TODO: 前端 React 服务 + nginx 反代
+      - ./data:/app/data          # 数据持久化: SQLite + checkpoints 不随容器销毁
+    restart: unless-stopped
