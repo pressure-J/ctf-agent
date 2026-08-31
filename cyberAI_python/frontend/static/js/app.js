@@ -15,4 +15,5 @@ function go(page){
   document.querySelectorAll(".sidebar a").forEach(a=>a.classList.toggle("on",a.dataset.page===page));
   if(LOADERS[page])LOADERS[page]();
 }
-document.addEventListener("DOMContentLoaded",()=>{if(getTok()){showApp();go("dashboard")}else{showLogin()}});
+function initUI(){ try{ if(getTok()){showApp();go("dashboard")}else{showLogin()} }catch(_e){ showLogin() } }
+initUI()   // body末尾直接执行(元素已全解析), 绝不依赖DOMContentLoaded(会漏触发致黑屏)
