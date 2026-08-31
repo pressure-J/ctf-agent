@@ -1,60 +1,68 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CyberStrikeAI Python</title><link rel="stylesheet" href="/static/css/style.css"></head><body>
-<div id="login-view" class="view">
-  <div class="card">
-    <h2>CyberStrikeAI 登录</h2>
+<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css"></head><body>
+<div id="login-view" class="login-overlay" style="display:none">
+  <div class="login-card">
+    <div class="login-brand"><h2>CyberStrike<span class="ai">AI</span></h2>
+      <p class="login-sub">使用平台账号登录</p></div>
     <input id="u" placeholder="用户名" autocomplete="username">
-    <input id="p" type="password" placeholder="密码" autocomplete="current-password">
+    <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
     <button onclick="authLogin()">登录</button><div id="login-msg" class="msg"></div>
   </div>
 </div>
-<div id="app-view" class="view" style="display:none">
-  <header>
-    <b>CyberStrikeAI</b>
-    <nav>
-      <a href="#" data-tab="chat"      class="on" onclick="switchTab('chat')">对话</a>
-      <a href="#" data-tab="tools"     onclick="switchTab('tools')">工具</a>
-      <a href="#" data-tab="agents"    onclick="switchTab('agents')">Agent</a>
-      <a href="#" data-tab="workflows" onclick="switchTab('workflows')">工作流</a>
-      <a href="#" data-tab="knowledge" onclick="switchTab('knowledge')">知识库</a>
-      <a href="#" data-tab="admin"     onclick="switchTab('admin')">管理</a>
-    </nav>
-    <span id="who"></span><a href="#" onclick="authLogout()">退出</a>
+<div id="layout" style="display:none">
+  <header class="topbar">
+    <div class="brand" onclick="go('dashboard')"><span class="core">CyberStrike</span><span class="ai">AI</span></div>
+    <div class="top-right"><span id="who"></span><a href="#" onclick="authLogout()">退出</a></div>
   </header>
-  <main>
-    <section id="tab-chat" class="tab-page">
-      <div id="log" class="log"></div>
-      <div class="input-bar">
-        <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
-        <button onclick="sendMsg()">发送</button>
-        <label class="chk"><input id="stream" type="checkbox" checked> 流式</label>
-      </div>
-    </section>
-    <section id="tab-tools" class="tab-page" style="display:none">
-      <h3>工具 (<span id="tools-count"></span>)</h3><div id="tools-list" class="log"></div>
-    </section>
-    <section id="tab-agents" class="tab-page" style="display:none">
-      <h3>Agent</h3><div id="agents-list" class="log"></div>
-    </section>
-    <section id="tab-workflows" class="tab-page" style="display:none">
-      <h3>工作流</h3>
-      <div class="input-bar"><input id="wf-input" placeholder="输入数据(JSON)"><button onclick="executeWorkflow()">执行</button></div>
-      <div id="workflows-list" class="log"></div>
-    </section>
-    <section id="tab-knowledge" class="tab-page" style="display:none">
-      <h3>知识库检索</h3>
-      <div class="input-bar"><input id="kb-query" placeholder="输入查询，如 SQL 注入" onkeydown="if(event.key==='Enter')searchKB()"><button onclick="searchKB()">检索</button></div>
-      <div id="kb-results" class="log"></div>
-    </section>
-    <section id="tab-admin" class="tab-page" style="display:none">
-      <h3>系统统计</h3><div id="admin-stats" class="log"></div>
-      <h3>审计日志</h3><div id="admin-audit" class="log"></div>
-    </section>
-  </main>
+  <div class="layout">
+    <aside class="sidebar">
+      <a data-page="dashboard"  class="on" onclick="go('dashboard')">仪表盘</a>
+      <a data-page="chat"       onclick="go('chat')">对话</a>
+      <a data-page="tools"      onclick="go('tools')">工具</a>
+      <a data-page="agents"     onclick="go('agents')">Agent</a>
+      <a data-page="workflows"  onclick="go('workflows')">工作流</a>
+      <a data-page="knowledge"  onclick="go('knowledge')">知识库</a>
+      <a data-page="admin"      onclick="go('admin')">管理</a>
+    </aside>
+    <main>
+      <section id="page-dashboard" class="page">
+        <h3>仪表盘</h3><div class="stats" id="dash-stats"></div>
+      </section>
+      <section id="page-chat" class="page" style="display:none">
+        <h3>对话</h3>
+        <div id="log" class="panel log"></div>
+        <div class="input-bar">
+          <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
+          <button onclick="sendMsg()">发送</button>
+          <label class="chk"><input id="stream" type="checkbox" checked> 流式</label>
+        </div>
+      </section>
+      <section id="page-tools" class="page" style="display:none">
+        <h3>工具 (<span id="tools-count"></span>)</h3><div id="tools-list" class="panel"></div>
+      </section>
+      <section id="page-agents" class="page" style="display:none">
+        <h3>Agent</h3><div id="agents-list" class="panel"></div>
+      </section>
+      <section id="page-workflows" class="page" style="display:none">
+        <h3>工作流</h3>
+        <div class="input-bar"><input id="wf-input" placeholder="输入数据(JSON)"><button onclick="executeWorkflow()">执行第一个</button></div>
+        <div id="workflows-list" class="panel"></div>
+      </section>
+      <section id="page-knowledge" class="page" style="display:none">
+        <h3>知识库检索</h3>
+        <div class="input-bar"><input id="kb-query" placeholder="如: SQL 注入" onkeydown="if(event.key==='Enter')searchKB()"><button onclick="searchKB()">检索</button></div>
+        <div id="kb-results" class="panel"></div>
+      </section>
+      <section id="page-admin" class="page" style="display:none">
+        <h3>系统统计</h3><div id="admin-stats" class="panel"></div>
+        <h3>审计日志</h3><div id="admin-audit" class="panel"></div>
+      </section>
+    </main>
+  </div>
 </div>
 <script src="/static/js/app.js"></script><script src="/static/js/auth.js"></script>
-<script src="/static/js/chat.js"></script>
+<script src="/static/js/dashboard.js"></script><script src="/static/js/chat.js"></script>
 <script src="/static/js/tools.js"></script><script src="/static/js/agents.js"></script>
 <script src="/static/js/workflow.js"></script><script src="/static/js/knowledge.js"></script><script src="/static/js/admin.js"></script>
 </body></html>
