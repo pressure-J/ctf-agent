@@ -3,7 +3,7 @@
 这是把 Go 版 `CyberStrikeAI`(CTF 安全 AI 平台)重写成 Python 的项目。
 本文档专门"讲人话":每个文件代码什么意思、为什么这么分层、和 Go 差多少、网上大厂框架怎么做。
 
-## 一、当前进度(14 项 todo, 完成 9 项)
+## 一、当前进度(14 项 todo, 完成 12 项)
 
 | 模块 | 状态 | 一句话 |
 |------|------|--------|
@@ -14,8 +14,10 @@
 | 多Agent C | ✅ | supervisor(子Agent当工具) + orchestrator + context_budget/checkpoint/中断恢复 |
 | 工作流 DAG D | ✅ | Kahn拓扑排序 + 共享state + agent/tool节点执行 |
 | 知识库RAG E | ✅ | 向量检索(余弦+TopK) + 索引552chunk |
-| 前端 F1 | 🟡部分 | 亮单页最小闭环(登录+对话SSE流式); 其余页面待补 |
-| 部署 H2 / 集成 H1 / 测试H3 | ⬜ | 待做 |
+| 前端 F1 | ✅ | 亮单页多页签(对话/工具/Agent/工作流/知识库/管理) |
+| 测试 H3 | ✅ | integration补全 + e2e |
+| 集成 H1 | ✅ | Bot基类 + 钉钉/飞书/TG/微信通道 |
+| 部署 H2 | 🟡 | Dockerfile/compose已存, 待 docker compose up |
 | 工具精化 G1 | ⬜跳过 | 与"Go 全YAML"相悖,不做 builtin 实现 |
 
 **能跑**:登录+鉴权+91工具+/api/chat(异步)+/api/chat/stream(带工具流式)+知识库检索+工作流DAG+多Agent编排+pytest(20+用例)全绿。

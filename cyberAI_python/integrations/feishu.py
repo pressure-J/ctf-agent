@@ -1,19 +1,18 @@
-
-"""飞书 机器人集成 - 接收消息->Agent处理->回复(TODO)
-原理: 通过webhook/长轮询接收消息, 调用Agent处理, 回推结果
-"""
+"""飞书 机器人 - 复用 Bot 基类的 Agent 处理; 平台收发待配置。"""
+from integrations.base import Bot
 import logging
 logger = logging.getLogger(__name__)
 
-class 飞书Bot:
-    def __init__(self, token: str = "", webhook_url: str = ""):
+
+class 飞书Bot(Bot):
+    def __init__(self, token: str = "", webhook_url: str = "", **kw):
+        super().__init__(name="飞书", **kw)
         self.token = token
         self.webhook_url = webhook_url
 
-    def handle_message(self, text: str):
-        """处理收到的消息, 返回Agent回复"""
-        raise NotImplementedError
+    def handle_message(self, text: str) -> str:
+        return super().handle_message(text)
 
     def start(self):
-        """启动接收循环"""
-        raise NotImplementedError
+        # TODO: 飞书机器人 webhook 回推(需真实地址)
+        raise NotImplementedError("配置平台收发参数后实现")
