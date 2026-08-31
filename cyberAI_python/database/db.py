@@ -371,6 +371,18 @@ class Database:
         
         with self.get_session() as session:
             return session.query(Conversation).count()
+
+    def count_users(self) -> int:
+        """统计用户数"""
+
+        with self.get_session() as session:
+            return session.query(User).count()
+
+    def count_workflows(self) -> int:
+        """统计工作流数"""
+
+        with self.get_session() as session:
+            return session.query(Workflow).count()
     
     def count_messages(self) -> int:
         """统计消息数"""
