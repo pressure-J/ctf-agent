@@ -40,3 +40,5 @@ main{flex:1;padding:20px;max-width:1000px}
 .dash-nav{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .dash-nav button{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:7px;cursor:pointer}
 .dash-nav button:hover{background:var(--accent);color:#fff}
+
+.sidebar a{font-size:15px;padding:11px 14px}

@@ -1,4 +1,3 @@
-// 全局: token/headers/渲染 + 路由(对标Go switchPage), 侧边导航切换模块
 function getTok(){return localStorage.getItem("token")}
 function setTok(t){t?localStorage.setItem("token",t):localStorage.removeItem("token")}
 function hdr(){return {"Content-Type":"application/json","Authorization":"Bearer "+getTok()}}
@@ -8,12 +7,12 @@ function addLine(cls,text){const l=document.getElementById("log");const d=docume
 function addDelta(text){const l=document.getElementById("log");let last=l.lastElementChild;
   if(!last||last.className.indexOf("assistant")<0){last=document.createElement("div");last.className="line assistant";l.appendChild(last)}
   last.textContent+=text;l.scrollTop=l.scrollHeight}
-const LOADERS={dashboard:"loadDashboard",tools:"loadTools",agents:"loadAgents",workflows:"loadWorkflows",knowledge:"",admin:"loadAdmin"};
+const LOADERS={tools:"loadTools",agents:"loadAgents",workflows:"loadWorkflows",knowledge:"",admin:"loadChannels",audit:"loadAudit"};
 function go(page){
   document.querySelectorAll(".page").forEach(s=>s.style.display="none");
   const el=document.getElementById("page-"+page);if(el)el.style.display="block";
   document.querySelectorAll(".sidebar a").forEach(a=>a.classList.toggle("on",a.dataset.page===page));
-  const fn=window[LOADERS[page]]; if(typeof fn==="function") fn();   // 动态取(函数在后加载的js里,顶层不可引用会ReferenceError中断)
+  const fn=window[LOADERS[page]]; if(typeof fn==="function") fn();
 }
-function initUI(){ try{ if(getTok()){showApp();go("dashboard")}else{showLogin()} }catch(_e){ showLogin() } }
-initUI()   // body末尾直接执行(元素已全解析), 绝不依赖DOMContentLoaded(会漏触发致黑屏)
+function initUI(){ try{ if(getTok()){showApp();go("chat")}else{showLogin()} }catch(_e){ showLogin() } }
+initUI()

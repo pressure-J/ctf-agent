@@ -40,3 +40,9 @@ def make_default(ch_id: str):
 @router.post("/ai-channels/test")
 def test_channel(cfg: Dict):
     return _mgr.test_connection(cfg)
+
+
+@router.post("/ai-channels/models")
+def list_models(cfg: Dict):
+    """按当前填的 base_url+api_key 拉取可用模型下拉"""
+    return _mgr.list_models(cfg)

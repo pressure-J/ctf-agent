@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260908"></head><body>
+<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260909"></head><body>
 <div id="login-view" class="login-overlay" style="display:none">
   <div class="login-card">
-    <div class="login-brand"><h2>CyberStrike<span class="ai">AI</span></h2>
-      <p class="login-sub">使用平台账号登录</p></div>
+    <div class="login-brand"><h2>CyberStrike<span class="ai">AI</span></h2><p class="login-sub">使用平台账号登录</p></div>
     <input id="u" placeholder="用户名" autocomplete="username">
     <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()">
     <button onclick="authLogin()">登录</button><div id="login-msg" class="msg"></div>
@@ -12,24 +11,21 @@
 </div>
 <div id="layout" style="display:none">
   <header class="topbar">
-    <div class="brand" onclick="go('dashboard')"><span class="core">CyberStrike</span><span class="ai">AI</span></div>
+    <div class="brand" onclick="go('chat')"><span class="core">CyberStrike</span><span class="ai">AI</span></div>
     <div class="top-right"><span id="who"></span><a href="#" onclick="authLogout()">退出</a></div>
   </header>
   <div class="layout">
     <aside class="sidebar">
-      <a data-page="dashboard"  class="on" onclick="go('dashboard')">仪表盘</a>
-      <a data-page="chat"       onclick="go('chat')">对话</a>
-      <a data-page="tools"      onclick="go('tools')">工具</a>
-      <a data-page="agents"     onclick="go('agents')">Agent</a>
-      <a data-page="workflows"  onclick="go('workflows')">工作流</a>
-      <a data-page="knowledge"  onclick="go('knowledge')">知识库</a>
-      <a data-page="admin"      onclick="go('admin')">管理</a>
+      <a data-page="chat" class="on" onclick="go('chat')">对话</a>
+      <a data-page="tools" onclick="go('tools')">工具</a>
+      <a data-page="agents" onclick="go('agents')">Agent</a>
+      <a data-page="workflows" onclick="go('workflows')">工作流</a>
+      <a data-page="knowledge" onclick="go('knowledge')">知识库</a>
+      <a data-page="admin" onclick="go('admin')">管理</a>
+      <a data-page="audit" onclick="go('audit')">审计日志</a>
     </aside>
     <main>
-      <section id="page-dashboard" class="page">
-        <h3>仪表盘</h3><div class="stats" id="dash-stats"></div>
-      </section>
-      <section id="page-chat" class="page" style="display:none">
+      <section id="page-chat" class="page">
         <h3>对话</h3>
         <div id="log" class="panel log"></div>
         <div class="input-bar">
@@ -55,16 +51,12 @@
         <div id="kb-results" class="panel"></div>
       </section>
       <section id="page-admin" class="page" style="display:none">
-        <h3>系统统计</h3><div id="admin-stats" class="panel"></div>
-        <h3>审计日志</h3><div id="admin-audit" class="panel"></div>
         <h3>AI 通道配置</h3>
         <div class="panel">
           <div class="input-bar" style="margin-bottom:12px">
             <select id="ch-select" style="flex:1;background:var(--bg2);color:var(--text);padding:9px;border-radius:7px;border:1px solid var(--border)" onchange="selectChannel()"></select>
-            <button onclick="addChannel()">新增</button>
-            <button onclick="saveChannel()">保存更改</button>
-            <button onclick="setDefault()">设为默认</button>
-            <button onclick="deleteChannel()">删除</button>
+            <button onclick="addChannel()">新增</button><button onclick="saveChannel()">保存更改</button>
+            <button onclick="setDefault()">设为默认</button><button onclick="deleteChannel()">删除</button>
             <button onclick="testChannel()">测试连接</button>
           </div>
           <div class="ai-grid">
@@ -72,20 +64,27 @@
             <label>API 提供商<input id="ch-provider" value="openai"></label>
             <label>Base URL<input id="ch-baseurl" placeholder="https://.../v1"></label>
             <label>API Key<input id="ch-apikey" type="password" placeholder="留空复用 .env"></label>
-            <label>模型<input id="ch-model" placeholder="deepseek-chat"></label>
             <label>最大上下文 Token<input id="ch-maxctx" placeholder="120000"></label>
             <label>最大输出 Token<input id="ch-maxout" placeholder="32768"></label>
+          </div>
+          <div class="input-bar" style="margin:10px 0">
+            <select id="ch-model" style="flex:1;background:var(--bg2);color:var(--text);padding:9px;border-radius:7px;border:1px solid var(--border)">
+              <option value="">先填 Base URL + API Key，再点「获取模型」</option>
+            </select>
+            <button onclick="loadModels()">获取模型</button>
           </div>
           <div class="ch-msg" id="ch-msg"></div>
         </div>
       </section>
+      <section id="page-audit" class="page" style="display:none">
+        <h3>审计日志</h3><div id="audit-list" class="panel"></div>
+      </section>
     </main>
   </div>
 </div>
-<script src="/static/js/app.js?v=20260908"></script><script src="/static/js/auth.js?v=20260908"></script>
-<script src="/static/js/dashboard.js?v=20260908"></script><script src="/static/js/chat.js?v=20260908"></script>
-<script src="/static/js/tools.js?v=20260908"></script><script src="/static/js/agents.js?v=20260908"></script>
-<script src="/static/js/workflow.js?v=20260908"></script><script src="/static/js/knowledge.js?v=20260908"></script><script src="/static/js/admin.js?v=20260908"></script>
-
-<script src="/static/js/ai_channels.js?v=20260908"></script>
+<script src="/static/js/app.js?v=20260909"></script><script src="/static/js/auth.js?v=20260909"></script>
+<script src="/static/js/chat.js?v=20260909"></script><script src="/static/js/tools.js?v=20260909"></script>
+<script src="/static/js/agents.js?v=20260909"></script><script src="/static/js/workflow.js?v=20260909"></script>
+<script src="/static/js/knowledge.js?v=20260909"></script><script src="/static/js/ai_channels.js?v=20260909"></script>
+<script src="/static/js/admin.js?v=20260909"></script><script src="/static/js/audit.js?v=20260909"></script>
 </body></html>

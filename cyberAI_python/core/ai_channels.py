@@ -92,3 +92,15 @@ class AiChannelManager:
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
+    def list_models(self, cfg: dict) -> dict:
+        """用给定 base_url+api_key 拉取该服务商可用的模型列表(对齐 Go "已加载 N 个模型供下拉选择")。"""
+        from openai import OpenAI
+        try:
+            cli = OpenAI(api_key=cfg.get("api_key") or os.getenv("DEEPSEEK_API_KEY"),
+                         base_url=cfg.get("base_url") or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"))
+            data = cli.models.list()
+            models = sorted({m.id for m in data.data})
+            return {"ok": True, "models": models, "count": len(models)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
