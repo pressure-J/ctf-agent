@@ -29,8 +29,11 @@ async function saveChannel(){try{
     model:_v("ch-model"),max_context:+_v("ch-maxctx")||120000,max_output:+_v("ch-maxout")||32768};
   const cur=_cur(), url=cur?"/api/settings/ai-channels/"+cur.id:"/api/settings/ai-channels";
   const r=await fetch(url,{method:cur?"PUT":"POST",headers:hdr(),body:JSON.stringify(body)});
+  const saved=r.ok?await r.json():null;
   document.getElementById("ch-msg").textContent=r.ok?"已保存(切换模型需重启生效)":"保存失败";
-  if(r.ok){_CUR=null;loadChannels();}
+  if(r.ok){ const rid=(saved&&saved.id)||(cur&&cur.id); _CUR=null; await loadChannels();
+    if(rid){ const i=_CHS.findIndex(x=>x.id===rid); if(i>=0){_CUR=i;_fillCfg(_CHS[i]);document.getElementById("ch-select").value=i;} }
+  }
 }catch(e){document.getElementById("ch-msg").textContent="保存失败: "+e.message}}
 async function deleteChannel(){const cur=_cur();if(!cur)return;await fetch("/api/settings/ai-channels/"+cur.id,{method:"DELETE",headers:hdr()});_CUR=null;loadChannels();}
 async function setDefault(){const cur=_cur();if(!cur)return;const r=await fetch("/api/settings/ai-channels/"+cur.id+"/default",{method:"POST",headers:hdr()});_CUR=null;if(r.ok)loadChannels();}
