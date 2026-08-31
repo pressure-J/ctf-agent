@@ -10,15 +10,51 @@
   </div>
 </div>
 <div id="app-view" class="view" style="display:none">
-  <header><b>CyberStrikeAI</b><span id="who"></span><a href="#" onclick="authLogout()">退出</a></header>
+  <header>
+    <b>CyberStrikeAI</b>
+    <nav>
+      <a href="#" data-tab="chat"      class="on" onclick="switchTab('chat')">对话</a>
+      <a href="#" data-tab="tools"     onclick="switchTab('tools')">工具</a>
+      <a href="#" data-tab="agents"    onclick="switchTab('agents')">Agent</a>
+      <a href="#" data-tab="workflows" onclick="switchTab('workflows')">工作流</a>
+      <a href="#" data-tab="knowledge" onclick="switchTab('knowledge')">知识库</a>
+      <a href="#" data-tab="admin"     onclick="switchTab('admin')">管理</a>
+    </nav>
+    <span id="who"></span><a href="#" onclick="authLogout()">退出</a>
+  </header>
   <main>
-    <div id="log" class="log"></div>
-    <div class="input-bar">
-      <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
-      <button onclick="sendMsg()">发送</button>
-      <label class="chk"><input id="stream" type="checkbox" checked> 流式</label>
-    </div>
+    <section id="tab-chat" class="tab-page">
+      <div id="log" class="log"></div>
+      <div class="input-bar">
+        <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
+        <button onclick="sendMsg()">发送</button>
+        <label class="chk"><input id="stream" type="checkbox" checked> 流式</label>
+      </div>
+    </section>
+    <section id="tab-tools" class="tab-page" style="display:none">
+      <h3>工具 (<span id="tools-count"></span>)</h3><div id="tools-list" class="log"></div>
+    </section>
+    <section id="tab-agents" class="tab-page" style="display:none">
+      <h3>Agent</h3><div id="agents-list" class="log"></div>
+    </section>
+    <section id="tab-workflows" class="tab-page" style="display:none">
+      <h3>工作流</h3>
+      <div class="input-bar"><input id="wf-input" placeholder="输入数据(JSON)"><button onclick="executeWorkflow()">执行</button></div>
+      <div id="workflows-list" class="log"></div>
+    </section>
+    <section id="tab-knowledge" class="tab-page" style="display:none">
+      <h3>知识库检索</h3>
+      <div class="input-bar"><input id="kb-query" placeholder="输入查询，如 SQL 注入" onkeydown="if(event.key==='Enter')searchKB()"><button onclick="searchKB()">检索</button></div>
+      <div id="kb-results" class="log"></div>
+    </section>
+    <section id="tab-admin" class="tab-page" style="display:none">
+      <h3>系统统计</h3><div id="admin-stats" class="log"></div>
+      <h3>审计日志</h3><div id="admin-audit" class="log"></div>
+    </section>
   </main>
 </div>
-<script src="/static/js/app.js"></script><script src="/static/js/auth.js"></script><script src="/static/js/chat.js"></script>
+<script src="/static/js/app.js"></script><script src="/static/js/auth.js"></script>
+<script src="/static/js/chat.js"></script>
+<script src="/static/js/tools.js"></script><script src="/static/js/agents.js"></script>
+<script src="/static/js/workflow.js"></script><script src="/static/js/knowledge.js"></script><script src="/static/js/admin.js"></script>
 </body></html>
