@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260911"></head><body>
+<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260912"></head><body>
 <div id="login-view" class="login-overlay" style="display:none">
   <div class="login-card">
     <div class="login-brand"><h2>CyberStrike<span class="ai">AI</span></h2><p class="login-sub">使用平台账号登录</p></div>
@@ -32,14 +32,25 @@
           <div id="conv-list" class="conv-list"></div>
           <button class="primary" style="background:var(--bg2);color:var(--text)" onclick="toggleSettings()">会话设置</button>
           <div id="conv-settings" class="conv-settings" style="display:none">
+            <div class="chk" style="margin-bottom:4px">对话模式</div>
+            <select id="conv-mode" style="width:100%;background:var(--bg2);color:var(--text);padding:7px;border-radius:6px;border:1px solid var(--border);margin-bottom:8px">
+              <option value="single">单 Agent</option>
+              <option value="supervisor">Supervisor（专家路由）</option>
+              <option value="plan_execute">Plan-Execute</option>
+            </select>
             <label class="chk"><input id="stream" type="checkbox" checked> 流式输出</label>
-            <div style="margin-top:6px">模型走「管理→AI通道」默认通道</div>
+            <div style="margin-top:6px;font-size:12px">模型走「管理→AI通道」默认通道</div>
           </div>
         </aside>
         <div class="chat-main">
+          <div class="chat-toolbar">
+            <select id="mode-quick"><option value="supervisor">Supervisor（专家路由）</option><option value="penetration">渗透测试</option><option value="bugbounty">补天</option><option value="plan_execute">Plan-Execute</option><option value="single">单 Agent</option></select>
+            <span class="chk" style="font-size:12px">风险 <select id="risk"><option>high</option><option>medium</option><option>low</option></select></span>
+            <button style="font-size:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;cursor:pointer" onclick="newChannelHint()">新通道</button>
+          </div>
           <div id="log" class="panel log"></div>
+          <textarea id="msg" rows="1" placeholder="输入测试目标或命令（输入 @ 选工具 | Shift+Enter 换行，Enter 发送）" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
           <div class="input-bar">
-            <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
             <button onclick="sendMsg()">发送</button>
           </div>
         </div>
@@ -92,9 +103,9 @@
     </main>
   </div>
 </div>
-<script src="/static/js/app.js?v=20260911"></script><script src="/static/js/auth.js?v=20260911"></script>
-<script src="/static/js/chat.js?v=20260911"></script><script src="/static/js/tools.js?v=20260911"></script>
-<script src="/static/js/agents.js?v=20260911"></script><script src="/static/js/workflow.js?v=20260911"></script>
-<script src="/static/js/knowledge.js?v=20260911"></script><script src="/static/js/ai_channels.js?v=20260911"></script>
-<script src="/static/js/admin.js?v=20260911"></script><script src="/static/js/audit.js?v=20260911"></script>
+<script src="/static/js/app.js?v=20260912"></script><script src="/static/js/auth.js?v=20260912"></script>
+<script src="/static/js/chat.js?v=20260912"></script><script src="/static/js/tools.js?v=20260912"></script>
+<script src="/static/js/agents.js?v=20260912"></script><script src="/static/js/workflow.js?v=20260912"></script>
+<script src="/static/js/knowledge.js?v=20260912"></script><script src="/static/js/ai_channels.js?v=20260912"></script>
+<script src="/static/js/admin.js?v=20260912"></script><script src="/static/js/audit.js?v=20260912"></script>
 </body></html>

@@ -55,3 +55,8 @@ main{flex:1;padding:20px;max-width:1000px}
 .conv-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .conv-del{background:none;border:none;color:inherit;cursor:pointer;opacity:.6}
 .conv-settings{border:1px solid var(--border);border-radius:7px;padding:10px;font-size:13px;color:var(--muted)}
+
+.chat-toolbar{display:flex;gap:10px;align-items:center;padding:6px 0}
+.chat-toolbar select{background:var(--bg2);color:var(--text);padding:6px;border-radius:6px;border:1px solid var(--border)}
+.chat-toolbar #risk{font-size:12px}
+#msg{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:10px;resize:vertical;min-height:38px;font-family:inherit}

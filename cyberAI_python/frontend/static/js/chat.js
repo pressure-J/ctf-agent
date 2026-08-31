@@ -1,4 +1,4 @@
-let CURR=null;
+let CURR=null; document.addEventListener("DOMContentLoaded",bindModeSelectors);
 function _tf(dt){const now=new Date(),d=new Date(dt||now);
   const a=new Date(now.getFullYear(),now.getMonth(),now.getDate()),b=new Date(d.getFullYear(),d.getMonth(),d.getDate());
   const day=Math.round((a-b)/86400000);return day<=0?"今天":day===1?"昨天":day<=7?"过去七天":"更早";}
@@ -23,6 +23,17 @@ async function selectConv(id){try{
   loadConvs();
 }catch(e){}}
 async function delConv(id){try{await fetch("/api/conversations/"+id,{method:"DELETE",headers:hdr()});if(CURR===id)CURR=null;loadConvs();}catch(e){}}
+
+// 对话模式设置(存localStorage; 会话设置同步)
+function bindModeSelectors(){
+  const sm=document.getElementById("conv-mode"), mq=document.getElementById("mode-quick");
+  const save=()=>{localStorage.setItem("conv_mode",mq.value); if(sm)sm.value=mq.value;};
+  const save2=()=>{localStorage.setItem("conv_mode",sm.value); mq.value=sm.value;};
+  if(mq)mq.value=localStorage.getItem("conv_mode")||"supervisor";
+  if(mq)mq.onchange=save; if(sm)sm.onchange=save2;
+}
+function toggleSettings(){const s=document.getElementById("conv-settings");s.style.display=s.style.display==="none"?"block":"none"; if(s.style.display==="block"){const mq=document.getElementById("mode-quick");document.getElementById("conv-mode").value=mq?mq.value:(localStorage.getItem("conv_mode")||"supervisor");}}
+function newChannelHint(){go("admin");document.getElementById("ch-msg").textContent="在「AI 通道配置」填地址+Key→获取模型→保存即可";document.getElementById("ch-name").focus();}
 function toggleSettings(){const s=document.getElementById("conv-settings");s.style.display=s.style.display==="none"?"block":"none"}
 async function sendOnce(msg){try{
   const r=await fetch("/api/chat",{method:"POST",headers:hdr(),body:JSON.stringify({message:msg,conversation_id:CURR})});
