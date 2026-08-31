@@ -31,7 +31,11 @@ class LLMClient:
             ch = None
         ch = ch or {}
 
-        self.model = model or ch.get("model") or os.getenv("LLM_MODEL", "deepseek-chat")
+        # 模型: 构造参数(非占位默认) > 默认通道 model > env LLM_MODEL
+        # 注意 Agent 默认传 "deepseek-chat"(占位), 须被默认通道的 model(如 gpt-5.6-luna)覆盖,
+        # 否则会用错误的模型名去打通道(404 model not found)
+        self.model = (model if model and model not in ("deepseek-chat", "") else None) \
+            or ch.get("model") or os.getenv("LLM_MODEL", "deepseek-chat")
         self.temperature = temperature
         self.max_tokens = max_tokens or ch.get("max_output") or 2000
 
