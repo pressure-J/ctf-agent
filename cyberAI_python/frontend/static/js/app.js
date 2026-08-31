@@ -8,12 +8,12 @@ function addLine(cls,text){const l=document.getElementById("log");const d=docume
 function addDelta(text){const l=document.getElementById("log");let last=l.lastElementChild;
   if(!last||last.className.indexOf("assistant")<0){last=document.createElement("div");last.className="line assistant";l.appendChild(last)}
   last.textContent+=text;l.scrollTop=l.scrollHeight}
-const LOADERS={dashboard:loadDashboard,tools:loadTools,agents:loadAgents,workflows:loadWorkflows,knowledge:()=>{},admin:loadAdmin};
+const LOADERS={dashboard:"loadDashboard",tools:"loadTools",agents:"loadAgents",workflows:"loadWorkflows",knowledge:"",admin:"loadAdmin"};
 function go(page){
   document.querySelectorAll(".page").forEach(s=>s.style.display="none");
   const el=document.getElementById("page-"+page);if(el)el.style.display="block";
   document.querySelectorAll(".sidebar a").forEach(a=>a.classList.toggle("on",a.dataset.page===page));
-  if(LOADERS[page])LOADERS[page]();
+  const fn=window[LOADERS[page]]; if(typeof fn==="function") fn();   // 动态取(函数在后加载的js里,顶层不可引用会ReferenceError中断)
 }
 function initUI(){ try{ if(getTok()){showApp();go("dashboard")}else{showLogin()} }catch(_e){ showLogin() } }
 initUI()   // body末尾直接执行(元素已全解析), 绝不依赖DOMContentLoaded(会漏触发致黑屏)
