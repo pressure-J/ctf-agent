@@ -2,13 +2,18 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# 最小系统依赖(常用工具 dig/nmap; 重扫描工具如需要把注释打开再加)
+# apt 换清华源(CN 直连快, 不依赖宿主代理)
+RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g; s|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+        /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g; s|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+        /etc/apt/sources.list
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    dnsutils curl nmap git \
+    dnsutils curl nmap ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# pip 换清华源
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 COPY . .
 EXPOSE 8080
