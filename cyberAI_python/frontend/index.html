@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260905"></head><body>
+<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260907"></head><body>
 <div id="login-view" class="login-overlay" style="display:none">
   <div class="login-card">
     <div class="login-brand"><h2>CyberStrike<span class="ai">AI</span></h2>
@@ -57,12 +57,35 @@
       <section id="page-admin" class="page" style="display:none">
         <h3>系统统计</h3><div id="admin-stats" class="panel"></div>
         <h3>审计日志</h3><div id="admin-audit" class="panel"></div>
+        <h3>AI 通道配置</h3>
+        <div class="panel">
+          <div class="input-bar" style="margin-bottom:12px">
+            <select id="ch-select" style="flex:1;background:var(--bg2);color:var(--text);padding:9px;border-radius:7px;border:1px solid var(--border)" onchange="selectChannel()"></select>
+            <button onclick="addChannel()">新增</button>
+            <button onclick="saveChannel()">保存更改</button>
+            <button onclick="setDefault()">设为默认</button>
+            <button onclick="deleteChannel()">删除</button>
+            <button onclick="testChannel()">测试连接</button>
+          </div>
+          <div class="ai-grid">
+            <label>通道名称<input id="ch-name" placeholder="如 DeepSeek"></label>
+            <label>API 提供商<input id="ch-provider" value="openai"></label>
+            <label>Base URL<input id="ch-baseurl" placeholder="https://.../v1"></label>
+            <label>API Key<input id="ch-apikey" type="password" placeholder="留空复用 .env"></label>
+            <label>模型<input id="ch-model" placeholder="deepseek-chat"></label>
+            <label>最大上下文 Token<input id="ch-maxctx" placeholder="120000"></label>
+            <label>最大输出 Token<input id="ch-maxout" placeholder="32768"></label>
+          </div>
+          <div class="ch-msg" id="ch-msg"></div>
+        </div>
       </section>
     </main>
   </div>
 </div>
-<script src="/static/js/app.js?v=20260905"></script><script src="/static/js/auth.js?v=20260905"></script>
-<script src="/static/js/dashboard.js?v=20260905"></script><script src="/static/js/chat.js?v=20260905"></script>
-<script src="/static/js/tools.js?v=20260905"></script><script src="/static/js/agents.js?v=20260905"></script>
-<script src="/static/js/workflow.js?v=20260905"></script><script src="/static/js/knowledge.js?v=20260905"></script><script src="/static/js/admin.js?v=20260905"></script>
+<script src="/static/js/app.js?v=20260907"></script><script src="/static/js/auth.js?v=20260907"></script>
+<script src="/static/js/dashboard.js?v=20260907"></script><script src="/static/js/chat.js?v=20260907"></script>
+<script src="/static/js/tools.js?v=20260907"></script><script src="/static/js/agents.js?v=20260907"></script>
+<script src="/static/js/workflow.js?v=20260907"></script><script src="/static/js/knowledge.js?v=20260907"></script><script src="/static/js/admin.js?v=20260907"></script>
+
+<script src="/static/js/ai_channels.js?v=20260907"></script>
 </body></html>

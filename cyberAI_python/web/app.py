@@ -18,8 +18,9 @@ app.add_middleware(CORSMiddleware,
                    allow_methods=["*"], allow_headers=["*"])
 
 from web.deps import database
-from web.routers import auth, chat, tools, agent, workflow, knowledge, admin, websocket
-for _r in (auth, chat, tools, agent, workflow, knowledge, admin, websocket):
+from web.routers import (auth, chat, tools, agent, workflow, knowledge,
+                         admin, websocket, settings)
+for _r in (auth, chat, tools, agent, workflow, knowledge, admin, websocket, settings):
     app.include_router(_r.router)
 
 # ---------- 轻量单页前端(静态托管, 对齐 Go 的 web/templates+static) ----------

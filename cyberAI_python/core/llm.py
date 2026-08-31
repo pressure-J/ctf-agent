@@ -22,15 +22,23 @@ class LLMClient:
         temperature: float = 0.7,
         max_tokens: int = 2000,
     ):
-        # 允许外部传参覆盖环境变量; 不传则读 .env
-        self.model = model or os.getenv("LLM_MODEL", "deepseek-chat")
+        # 优先用已配置的"默认 AI 通道"(管理页可加/改), 配置项缺省回退 .env
+        ch = None
+        try:
+            from core.ai_channels import AiChannelManager
+            ch = AiChannelManager().default()
+        except Exception:
+            ch = None
+        ch = ch or {}
+
+        self.model = model or ch.get("model") or os.getenv("LLM_MODEL", "deepseek-chat")
         self.temperature = temperature
-        self.max_tokens = max_tokens
+        self.max_tokens = max_tokens or ch.get("max_output") or 2000
 
         # 核心: OpenAI 官方客户端, 但 base_url 可指向任何兼容服务
         self.client = OpenAI(
-            api_key=api_key or os.getenv("DEEPSEEK_API_KEY"),
-            base_url=base_url or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+            api_key=api_key or ch.get("api_key") or os.getenv("DEEPSEEK_API_KEY"),
+            base_url=base_url or ch.get("base_url") or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
         )
         logger.debug(f"LLMClient 初始化: model={self.model}")
 
