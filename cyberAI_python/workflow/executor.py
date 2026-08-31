@@ -12,13 +12,23 @@ class WorkflowExecutor:
         self.agent_factory = agent_factory   # agent_id -> Agent(便于 mock)
 
     def execute(self, graph: WorkflowGraph, initial_data: Dict = None) -> Dict[str, Any]:
+        """按 DAG 分批执行(对齐 Go eino 并发图): 同一批=所有就绪节点(依赖已全部完成),
+        批内并发执行; 只在依赖边上串行。环由 topological_order 提前拒绝。"""
         order = graph.topological_order()
         if not order:
             raise ValueError("工作流无法执行(存在环)")
+        import concurrent.futures
         state = WorkflowState(initial_data)
-        for nid in order:
-            result = self._execute_node(graph.nodes[nid], state)
-            state.set_node_result(nid, result)
+        done = set()
+        with concurrent.futures.ThreadPoolExecutor() as ex:
+            while len(done) < len(graph.nodes):
+                ready = [nid for nid in graph.nodes
+                         if nid not in done and all(i in done for i in graph.nodes[nid].inputs)]
+                futs = {ex.submit(self._execute_node, graph.nodes[nid], state): nid for nid in ready}
+                for fut in concurrent.futures.as_completed(futs):
+                    nid = futs[fut]
+                    state.set_node_result(nid, fut.result())
+                    done.add(nid)
         return state.node_results
 
     def _default_agent(self, agent_id):

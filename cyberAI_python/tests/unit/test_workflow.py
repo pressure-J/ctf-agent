@@ -33,6 +33,19 @@ class TestWorkflow(unittest.TestCase):
         self.assertIsNone(WorkflowGraph.from_definition(ring).topological_order())
         self.assertFalse(WorkflowGraph.from_definition(ring).validate())
 
+    def test_parallel_execution(self):
+        """同一层(无依赖)节点应并发: 各 sleep0.25 -> 总耗时 <串行和"""
+        import time
+        DEF_P = {"nodes": [
+            {"id": "a", "type": "agent", "agent_id": "A", "task": "t"},
+            {"id": "b", "type": "agent", "agent_id": "B", "task": "t"},
+            {"id": "c", "type": "agent", "agent_id": "C", "task": "t"}],
+            "edges": [{"from": "a", "to": "b"}, {"from": "a", "to": "c"}]}
+        class Slow:
+            def think(s, task, context=None): time.sleep(0.25); return task
+        st = time.time()
+        WorkflowEngine(WorkflowExecutor(lambda aid: Slow())).execute(DEF_P)
+        self.assertLess(time.time() - st, 0.6)   # 串行~0.75, 并行~0.5
 
-if __name__ == "__main__":
-    unittest.main()
+
+if __name__ == "__main__":    unittest.main()
