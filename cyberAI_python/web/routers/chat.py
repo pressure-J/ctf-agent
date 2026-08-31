@@ -63,3 +63,25 @@ async def get_conversation(conversation_id: str,
     if not conversation:
         raise HTTPException(status_code=404, detail="对话不存在")
     return conversation
+
+
+@router.post("/conversations")
+async def create_conv(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = auth_manager.verify_token(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="未授权")
+    cid = database.create_conversation(user["sub"])
+    return {"id": cid}
+
+
+@router.delete("/conversations/{conversation_id}")
+async def delete_conv(conversation_id: str,
+                      credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = auth_manager.verify_token(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="未授权")
+    conv = database.get_conversation(conversation_id)
+    if not conv or conversation_id not in {c["id"] for c in database.list_conversations(user["sub"])}:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    database.delete_conversation(conversation_id)
+    return {"ok": True}

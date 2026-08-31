@@ -180,6 +180,13 @@ class Database:
     
     # ========== Agent操作 ==========
     
+    def delete_conversation(self, conversation_id: str) -> bool:
+        """删除对话及其消息"""
+        with self.get_session() as session:
+            session.query(Message).filter(Message.conversation_id == conversation_id).delete()
+            deleted = session.query(Conversation).filter(Conversation.id == conversation_id).delete()
+            return bool(deleted)
+
     def create_agent(self, config: Dict) -> str:
         """创建Agent"""
         

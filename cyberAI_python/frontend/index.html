@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260910"></head><body>
+<title>CyberStrikeAI</title><link rel="stylesheet" href="/static/css/style.css?v=20260911"></head><body>
 <div id="login-view" class="login-overlay" style="display:none">
   <div class="login-card">
     <div class="login-brand"><h2>CyberStrike<span class="ai">AI</span></h2><p class="login-sub">使用平台账号登录</p></div>
@@ -25,13 +25,23 @@
       <a data-page="audit" onclick="go('audit')">审计日志</a>
     </aside>
     <main>
-      <section id="page-chat" class="page">
-        <h3>对话</h3>
-        <div id="log" class="panel log"></div>
-        <div class="input-bar">
-          <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
-          <button onclick="sendMsg()">发送</button>
-          <label class="chk"><input id="stream" type="checkbox" checked> 流式</label>
+      <section id="page-chat" class="page chat-wrap">
+        <aside class="chat-side">
+          <button class="primary" onclick="newConv()">+ 新对话</button>
+          <input id="conv-search" placeholder="搜索历史..." oninput="loadConvs()">
+          <div id="conv-list" class="conv-list"></div>
+          <button class="primary" style="background:var(--bg2);color:var(--text)" onclick="toggleSettings()">会话设置</button>
+          <div id="conv-settings" class="conv-settings" style="display:none">
+            <label class="chk"><input id="stream" type="checkbox" checked> 流式输出</label>
+            <div style="margin-top:6px">模型走「管理→AI通道」默认通道</div>
+          </div>
+        </aside>
+        <div class="chat-main">
+          <div id="log" class="panel log"></div>
+          <div class="input-bar">
+            <input id="msg" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMsg()">
+            <button onclick="sendMsg()">发送</button>
+          </div>
         </div>
       </section>
       <section id="page-tools" class="page" style="display:none">
@@ -82,9 +92,9 @@
     </main>
   </div>
 </div>
-<script src="/static/js/app.js?v=20260910"></script><script src="/static/js/auth.js?v=20260910"></script>
-<script src="/static/js/chat.js?v=20260910"></script><script src="/static/js/tools.js?v=20260910"></script>
-<script src="/static/js/agents.js?v=20260910"></script><script src="/static/js/workflow.js?v=20260910"></script>
-<script src="/static/js/knowledge.js?v=20260910"></script><script src="/static/js/ai_channels.js?v=20260910"></script>
-<script src="/static/js/admin.js?v=20260910"></script><script src="/static/js/audit.js?v=20260910"></script>
+<script src="/static/js/app.js?v=20260911"></script><script src="/static/js/auth.js?v=20260911"></script>
+<script src="/static/js/chat.js?v=20260911"></script><script src="/static/js/tools.js?v=20260911"></script>
+<script src="/static/js/agents.js?v=20260911"></script><script src="/static/js/workflow.js?v=20260911"></script>
+<script src="/static/js/knowledge.js?v=20260911"></script><script src="/static/js/ai_channels.js?v=20260911"></script>
+<script src="/static/js/admin.js?v=20260911"></script><script src="/static/js/audit.js?v=20260911"></script>
 </body></html>

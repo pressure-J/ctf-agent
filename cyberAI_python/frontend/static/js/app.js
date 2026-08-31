@@ -7,7 +7,7 @@ function addLine(cls,text){const l=document.getElementById("log");const d=docume
 function addDelta(text){const l=document.getElementById("log");let last=l.lastElementChild;
   if(!last||last.className.indexOf("assistant")<0){last=document.createElement("div");last.className="line assistant";l.appendChild(last)}
   last.textContent+=text;l.scrollTop=l.scrollHeight}
-const LOADERS={tools:"loadTools",agents:"loadAgents",workflows:"loadWorkflows",knowledge:"",admin:"loadChannels",audit:"loadAudit"};
+const LOADERS={chat:"loadConvs",tools:"loadTools",agents:"loadAgents",workflows:"loadWorkflows",knowledge:"",admin:"loadChannels",audit:"loadAudit"};
 function go(page){
   document.querySelectorAll(".page").forEach(s=>s.style.display="none");
   const el=document.getElementById("page-"+page);if(el)el.style.display="block";

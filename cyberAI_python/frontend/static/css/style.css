@@ -42,3 +42,16 @@ main{flex:1;padding:20px;max-width:1000px}
 .dash-nav button:hover{background:var(--accent);color:#fff}
 
 .sidebar a{font-size:15px;padding:11px 14px}
+
+.chat-wrap{display:flex;gap:14px;height:calc(100vh - 130px)}
+.chat-side{width:250px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.chat-side .primary{background:var(--grad);border:none;color:#fff;padding:10px;border-radius:7px;cursor:pointer;font-weight:600}
+.chat-side input{padding:9px;border-radius:7px;border:1px solid var(--border);background:var(--bg2);color:var(--text)}
+.chat-main{flex:1;display:flex;flex-direction:column;gap:8px}
+.conv-list{flex:1;overflow:auto;border:1px solid var(--border);border-radius:7px;padding:8px;background:var(--card)}
+.conv-group{font-size:11px;color:var(--muted);text-transform:uppercase;margin:8px 4px 4px}
+.conv-item{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border-radius:6px;cursor:pointer;color:var(--text)}
+.conv-item:hover{background:var(--bg2)}.conv-item.on{background:var(--accent);color:#fff}
+.conv-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.conv-del{background:none;border:none;color:inherit;cursor:pointer;opacity:.6}
+.conv-settings{border:1px solid var(--border);border-radius:7px;padding:10px;font-size:13px;color:var(--muted)}
